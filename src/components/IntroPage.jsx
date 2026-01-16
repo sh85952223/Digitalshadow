@@ -142,13 +142,13 @@ export default function IntroPage({ onComplete }) {
                         text={"디지털 본부에 오신 것을\n환영합니다. 요원님."}
                         delay={80}
                         textstyle={{
-                            fontSize: '3.5rem',
+                            fontSize: '4.5rem',
                             fontWeight: '800',
                             color: '#ffffff',
                             fontFamily: '"Pretendard Variable", Pretendard, sans-serif',
-                            textShadow: '0 0 20px rgba(255, 255, 255, 0.4)',
-                            marginBottom: '4rem',
-                            lineHeight: '1.4'
+                            textShadow: '0 0 30px rgba(255, 255, 255, 0.5)', /* Increased shadow for bigger text */
+                            marginBottom: '5rem', /* Increased spacing */
+                            lineHeight: '1.2'
                         }}
                     />
 

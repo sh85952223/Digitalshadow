@@ -141,11 +141,11 @@
 
     transform: translate3d(calc(var(--x) - 20px), calc(var(--y) - 20px), 0);
 
-    border: 2px solid #00ff9d;
-    /* Tech Green/Cyan */
+    border: 2px solid #BF5AF2;
+    /* Purple Theme */
     border-radius: 50%;
-    box-shadow: 0 0 10px #00ff9d, inset 0 0 5px #00ff9d;
-    background: rgba(0, 255, 157, 0.1);
+    box-shadow: 0 0 10px #BF5AF2, inset 0 0 5px #BF5AF2;
+    background: rgba(191, 90, 242, 0.1);
 
     display: flex;
     justify-content: center;
@@ -159,7 +159,7 @@
 .digital-cursor::after {
     content: '';
     position: absolute;
-    background: #00ff9d;
+    background: #BF5AF2;
 }
 
 .digital-cursor::before {

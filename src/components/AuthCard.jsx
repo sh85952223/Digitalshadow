@@ -21,9 +21,9 @@ const AuthCard = ({ onAuthenticate }) => {
             100% { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: blur(0); } 
         }
         @keyframes pulseRing { 
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 255, 157, 0.7); } 
-            70% { transform: scale(1.15); box-shadow: 0 0 0 10px rgba(0, 255, 157, 0); } 
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 255, 157, 0); } 
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(191, 90, 242, 0.7); } 
+            70% { transform: scale(1.15); box-shadow: 0 0 0 10px rgba(191, 90, 242, 0); } 
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(191, 90, 242, 0); } 
         }
       `}</style>
             <div
@@ -43,7 +43,7 @@ const AuthCard = ({ onAuthenticate }) => {
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: '2rem',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 255, 255, 0.1) inset',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(191, 90, 242, 0.1) inset',
                     width: '380px',
                     cursor: 'default',
                     animation: 'modalEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
@@ -61,11 +61,11 @@ const AuthCard = ({ onAuthenticate }) => {
                 <div style={{ position: 'relative' }}>
                     <div style={{
                         width: '90px', height: '90px', borderRadius: '50%',
-                        background: scanned ? 'linear-gradient(135deg, #00b09b, #96c93d)' : 'rgba(30, 30, 30, 0.6)',
+                        background: scanned ? 'linear-gradient(135deg, #7F00FF, #E100FF)' : 'rgba(30, 30, 30, 0.6)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
                         border: '1px solid rgba(255,255,255,0.1)',
-                        boxShadow: scanned ? '0 0 30px rgba(0, 255, 157, 0.4)' : 'none'
+                        boxShadow: scanned ? '0 0 30px rgba(191, 90, 242, 0.4)' : 'none'
                     }}>
                         {scanned ? <BadgeCheck size={48} color="#fff" /> : <Lock size={40} color="rgba(255,255,255,0.5)" />}
                     </div>
@@ -73,7 +73,7 @@ const AuthCard = ({ onAuthenticate }) => {
                     {!scanned && (
                         <div style={{
                             position: 'absolute', top: '-8px', left: '-8px', right: '-8px', bottom: '-8px',
-                            border: '2px solid rgba(0, 255, 255, 0.3)', borderRadius: '50%',
+                            border: '2px solid rgba(191, 90, 242, 0.3)', borderRadius: '50%',
                             animation: 'pulseRing 2.5s infinite'
                         }} />
                     )}
@@ -100,9 +100,9 @@ const AuthCard = ({ onAuthenticate }) => {
                         onMouseLeave={() => setIsHovered(false)}
                         onClick={handleInteraction}
                         style={{
-                            background: isHovered ? 'rgba(0, 255, 157, 1)' : 'rgba(255, 255, 255, 0.08)',
-                            color: isHovered ? '#000' : '#fff',
-                            border: isHovered ? '1px solid #00ff9d' : '1px solid rgba(255, 255, 255, 0.3)',
+                            background: isHovered ? 'rgba(191, 90, 242, 1)' : 'rgba(255, 255, 255, 0.08)',
+                            color: isHovered ? '#fff' : '#fff',
+                            border: isHovered ? '1px solid #BF5AF2' : '1px solid rgba(255, 255, 255, 0.3)',
                             padding: '1.2rem 3.5rem',
                             borderRadius: '16px',
                             cursor: 'none', /* IMPORTANT: keep cursor none so our digital cursor works */
@@ -113,7 +113,7 @@ const AuthCard = ({ onAuthenticate }) => {
                             fontSize: '1.35rem',
                             backdropFilter: 'blur(4px)',
                             width: '100%',
-                            boxShadow: isHovered ? '0 0 20px rgba(0, 255, 157, 0.5)' : '0 4px 20px rgba(0,0,0,0.2)'
+                            boxShadow: isHovered ? '0 0 20px rgba(191, 90, 242, 0.5)' : '0 4px 20px rgba(0,0,0,0.2)'
                         }}
                     >
                         ID 인증하기
