@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import IntroPage from './components/IntroPage';
 import InvestigationHQ from './components/InvestigationHQ';
+import ARoom from './components/ARoom';
 import './styles/FlashlightEffect.css'; // For global cursor styling
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
   const pages = [
     { key: 'intro', label: 'Intro' },
     { key: 'hq', label: 'HQ' },
+    { key: 'room', label: 'A\'s Room' },
     // Add more pages here as they are created
   ];
 
@@ -113,7 +115,10 @@ function App() {
         <IntroPage onComplete={() => setStage('hq')} />
       )}
       {stage === 'hq' && (
-        <InvestigationHQ />
+        <InvestigationHQ onComplete={() => setStage('room')} />
+      )}
+      {stage === 'room' && (
+        <ARoom onComplete={() => console.log('Room puzzle solved!')} />
       )}
     </div>
   );

@@ -3,11 +3,12 @@ import bgImage from '../assets/디지털수사본부.png';
 import characterImage from '../assets/본부장.png';
 import newsBackground from '../assets/news_background.jpg';
 
-const InvestigationHQ = () => {
+const InvestigationHQ = ({ onComplete }) => {
     const [step, setStep] = useState(0);
     const [showNews, setShowNews] = useState(false);
     const [displayedText, setDisplayedText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false); // Debounce click
 
     const dialogues = [
         "이번에 테스트를 통과한 신입요원인가?",
@@ -44,6 +45,12 @@ const InvestigationHQ = () => {
     }, [step]);
 
     const handleNext = () => {
+        if (isProcessing) return; // Ignore clicks during delay
+
+        // Add 300ms delay to prevent accidental double clicks or too fast progression
+        setIsProcessing(true);
+        setTimeout(() => setIsProcessing(false), 300);
+
         if (showNews) {
             setShowNews(false);
             setStep(prev => prev + 1);
@@ -59,7 +66,8 @@ const InvestigationHQ = () => {
         if (step < dialogues.length - 1) {
             setStep(prev => prev + 1);
         } else {
-            console.log("Scene Complete");
+            // All dialogues complete - transition to A's Room
+            if (onComplete) onComplete();
         }
     };
 
