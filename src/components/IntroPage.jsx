@@ -1,4 +1,3 @@
-```javascript
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/FlashlightEffect.css';
 import AuthCard from './AuthCard';
@@ -11,11 +10,11 @@ const Typewriter = ({ text, delay = 50, textstyle = {} }) => {
     useEffect(() => {
         let index = 0;
         setDisplayedText(''); // Reset on text change
-        
+
         const intervalId = setInterval(() => {
             if (index < text.length) {
                 // Safe char access
-                const char = text.charAt(index); 
+                const char = text.charAt(index);
                 setDisplayedText((prev) => prev + char);
                 index++;
             } else {
@@ -46,8 +45,8 @@ export default function IntroPage({ onComplete }) {
     useEffect(() => {
         // Initialize CSS variables
         if (containerRef.current) {
-            containerRef.current.style.setProperty('--x', `- 1000px`);
-            containerRef.current.style.setProperty('--y', `- 1000px`);
+            containerRef.current.style.setProperty('--x', `-1000px`);
+            containerRef.current.style.setProperty('--y', `-1000px`);
         }
     }, []);
 
@@ -60,14 +59,14 @@ export default function IntroPage({ onComplete }) {
 
                 // Always update physics/cursor position
                 setMousePos({ x, y });
-                containerRef.current.style.setProperty('--x', `${ x } px`);
-                containerRef.current.style.setProperty('--y', `${ y } px`);
+                containerRef.current.style.setProperty('--x', `${x}px`);
+                containerRef.current.style.setProperty('--y', `${y}px`);
 
                 const centerX = rect.width / 2;
                 const centerY = rect.height / 2;
                 // Still update center vars just in case
-                containerRef.current.style.setProperty('--center-x', `${ centerX } px`);
-                containerRef.current.style.setProperty('--center-y', `${ centerY } px`);
+                containerRef.current.style.setProperty('--center-x', `${centerX}px`);
+                containerRef.current.style.setProperty('--center-y', `${centerY}px`);
 
                 // Light beam offset logic matching CSS
                 const lightX = x + 110;
@@ -125,7 +124,7 @@ export default function IntroPage({ onComplete }) {
                     isBounce={false}
                     resolution={0.5}
                 />
-                
+
                 {/* Welcome Content Overlay */}
                 <div style={{
                     position: 'absolute',
@@ -152,7 +151,7 @@ export default function IntroPage({ onComplete }) {
                             lineHeight: '1.4'
                         }}
                     />
-                    
+
                     {/* Glassmorphism Entrance Button */}
                     <button
                         onClick={onComplete}
@@ -185,7 +184,7 @@ export default function IntroPage({ onComplete }) {
                     >
                         ENTRANCE
                     </button>
-                    
+
                     {/* Fade-in animation style for button if needed, or keeping it simple */}
                     <style>{`
     .entrance - btn {
