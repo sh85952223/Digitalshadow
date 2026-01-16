@@ -165,7 +165,7 @@ const DialLockPopup = ({ onClose, onSolved, purpleTheme }) => {
             <p style={{
                 marginTop: '40px', color: 'rgba(255,255,255,0.7)', fontSize: '1.4rem',
                 fontStyle: 'italic', textAlign: 'center', textShadow: '0 0 10px rgba(255,255,255,0.2)'
-            }}>"진실은 읽지 않은 약속에 있었다...방 안을 살펴보자"</p>
+            }}>"A의 메모: 진실은 읽지 않은 약속에 있었다...방 안을 살펴보자"</p>
 
             {/* Close Button */}
             <button

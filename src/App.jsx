@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import IntroPage from './components/IntroPage';
 import InvestigationHQ from './components/InvestigationHQ';
 import ARoom from './components/ARoom';
+import TabletScreen from './components/TabletScreen';
 import './styles/FlashlightEffect.css'; // For global cursor styling
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
     { key: 'intro', label: 'Intro' },
     { key: 'hq', label: 'HQ' },
     { key: 'room', label: 'A\'s Room' },
+    { key: 'tablet', label: 'Tablet' },
     // Add more pages here as they are created
   ];
 
@@ -32,7 +34,7 @@ function App() {
     <div className="App" style={{ position: 'relative' }}>
       {/* Digital Cursor - Only for non-intro pages (HQ and onwards) */}
       {/* IntroPage handles its own cursor during Auth phase */}
-      {stage !== 'intro' && (
+      {stage !== 'intro' && stage !== 'tablet' && (
         <div
           className="digital-cursor"
           style={{
@@ -118,7 +120,10 @@ function App() {
         <InvestigationHQ onComplete={() => setStage('room')} />
       )}
       {stage === 'room' && (
-        <ARoom onComplete={() => console.log('Room puzzle solved!')} />
+        <ARoom onComplete={() => setStage('tablet')} />
+      )}
+      {stage === 'tablet' && (
+        <TabletScreen onComplete={() => console.log('Tablet complete - next stage')} />
       )}
     </div>
   );

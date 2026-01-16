@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import roomBg from '../assets/a_room.png';
 import bedPapersImg from '../assets/bed_papers.png';
+import drawerLockImg from '../assets/drawer_lock.png';
+import tabletInDrawerImg from '../assets/tablet_in_drawer.png';
 import DialLockPopup from './DialLockPopup';
 import TermsModal from './TermsModal';
 
@@ -10,13 +12,15 @@ const ARoom = ({ onComplete }) => {
     const [dialogueText, setDialogueText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [currentMessage, setCurrentMessage] = useState(0);
+    const [showDrawerPreview, setShowDrawerPreview] = useState(false); // Drawer preview before dial lock
     const [showDialLock, setShowDialLock] = useState(false);
     const [showPapersPreview, setShowPapersPreview] = useState(false); // Papers preview before terms
     const [showTerms, setShowTerms] = useState(false);
     const [puzzleSolved, setPuzzleSolved] = useState(false);
     const [hoveredHotspot, setHoveredHotspot] = useState(null);
     const [drawerVisited, setDrawerVisited] = useState(false);
-    const [foundClauses, setFoundClauses] = useState([]); // Lifted state - persists across modal opens
+    const [foundClauses, setFoundClauses] = useState([]);
+    const [showTabletPreview, setShowTabletPreview] = useState(false); // Tablet reveal after puzzle // Lifted state - persists across modal opens
 
     const initialDialogue = "A의 방 잠입에 성공했다. 시간이 별로 없다. 빠르게 단서를 찾아야해.";
 
@@ -76,7 +80,7 @@ const ARoom = ({ onComplete }) => {
         }
         if (hotspot.id === 'drawer') {
             setDrawerVisited(true);
-            setShowDialLock(true);
+            setShowDrawerPreview(true); // Show preview first, not dial lock directly
             return;
         }
         if (hotspot.id === 'papers') {
@@ -106,6 +110,12 @@ const ARoom = ({ onComplete }) => {
         setShowTerms(true);
     };
 
+    // Handle drawer preview click - transition to dial lock
+    const handleDrawerPreviewClick = () => {
+        setShowDrawerPreview(false);
+        setShowDialLock(true);
+    };
+
     // Called when wrong clause clicked - close modal and show message with retry hint
     const handleWrongClause = (msg) => {
         setShowTerms(false);
@@ -124,10 +134,14 @@ const ARoom = ({ onComplete }) => {
     const handleDialSolved = () => {
         setPuzzleSolved(true);
         setShowDialLock(false);
-        showMessage("철컥! 서랍이 열렸다! 안에 뭔가 있는 것 같아...");
-        setTimeout(() => {
-            if (onComplete) onComplete();
-        }, 3000);
+        // Show tablet preview instead of immediate message
+        setShowTabletPreview(true);
+    };
+
+    // Handle tablet preview click - proceed to tablet component
+    const handleTabletPreviewClick = () => {
+        setShowTabletPreview(false);
+        if (onComplete) onComplete();
     };
 
     const getHotspotGlow = (hotspot) => {
@@ -273,6 +287,65 @@ const ARoom = ({ onComplete }) => {
                 </div>
             )}
 
+            {/* Drawer Preview - before Dial Lock */}
+            {showDrawerPreview && (
+                <div
+                    onClick={handleDrawerPreviewClick}
+                    style={{
+                        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                        background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(8px)',
+                        display: 'flex', flexDirection: 'column',
+                        justifyContent: 'center', alignItems: 'center',
+                        zIndex: 200, cursor: 'pointer', padding: '20px',
+                        animation: 'fadeIn 0.6s ease-out'
+                    }}
+                >
+                    {/* Drawer Lock Image */}
+                    <img
+                        src={drawerLockImg}
+                        alt="서랍 자물쇠"
+                        style={{
+                            maxWidth: '70%',
+                            maxHeight: '45%',
+                            objectFit: 'contain',
+                            borderRadius: '10px',
+                            boxShadow: `0 0 40px ${purpleTheme.glow}`,
+                            marginBottom: '30px',
+                            animation: 'slideUp 0.8s ease-out'
+                        }}
+                    />
+
+                    {/* Dialogue Box */}
+                    <div style={{
+                        width: '70%', maxWidth: '900px', minHeight: '160px',
+                        background: purpleTheme.bg,
+                        border: `1px solid ${purpleTheme.border}`,
+                        boxShadow: `0 0 30px ${purpleTheme.glow}`,
+                        backdropFilter: 'blur(16px)',
+                        clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)',
+                        display: 'flex', flexDirection: 'column', padding: '0',
+                        animation: 'slideUp 0.8s ease-out 0.2s both',
+                        position: 'relative'
+                    }}>
+                        <div style={{ width: '100%', height: '35px', background: `linear-gradient(90deg, rgba(191, 90, 242, 0.15) 0%, transparent 100%)`, borderBottom: `1px solid ${purpleTheme.border}`, display: 'flex', alignItems: 'center', paddingLeft: '40px' }}>
+                            <div style={{ width: '8px', height: '8px', background: purpleTheme.primary, marginRight: '15px', borderRadius: '50%', boxShadow: `0 0 8px ${purpleTheme.primary}` }}></div>
+                            <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: purpleTheme.primary, letterSpacing: '2px', fontWeight: 'bold' }}>LOCKED</span>
+                        </div>
+                        <div style={{ padding: '1.5rem 2.5rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            <div style={{ display: 'inline-block', background: 'rgba(191, 90, 242, 0.15)', padding: '0.4rem 1.5rem', borderLeft: `4px solid ${purpleTheme.primary}`, marginBottom: '1rem', width: 'fit-content' }}>
+                                <span style={{ color: '#fff', fontSize: '1.2rem', fontWeight: '800' }}>나</span>
+                            </div>
+                            <p style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '1.4rem', lineHeight: '1.6', margin: 0, fontWeight: '400' }}>
+                                비밀번호를 맞춰야지만 서랍을 열 수 있군....근데 비밀번호를 어떻게 맞추지? A가 힌트를 남겨줬을 것 같은데...
+                            </p>
+                        </div>
+                        <div style={{ position: 'absolute', bottom: '15px', right: '25px', color: purpleTheme.primary, fontSize: '1rem', fontWeight: 'bold', animation: 'bounce 1s infinite', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            CLICK TO UNLOCK <span style={{ fontSize: '0.9rem' }}>🔓</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Dial Lock Popup */}
             {showDialLock && (
                 <DialLockPopup
@@ -291,6 +364,65 @@ const ARoom = ({ onComplete }) => {
                     foundClauses={foundClauses}
                     purpleTheme={purpleTheme}
                 />
+            )}
+
+            {/* Tablet Preview - after drawer solved */}
+            {showTabletPreview && (
+                <div
+                    onClick={handleTabletPreviewClick}
+                    style={{
+                        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                        background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(8px)',
+                        display: 'flex', flexDirection: 'column',
+                        justifyContent: 'center', alignItems: 'center',
+                        zIndex: 200, cursor: 'pointer', padding: '20px',
+                        animation: 'fadeIn 0.6s ease-out'
+                    }}
+                >
+                    {/* Tablet in Drawer Image */}
+                    <img
+                        src={tabletInDrawerImg}
+                        alt="서랍 안 태블릿"
+                        style={{
+                            maxWidth: '70%',
+                            maxHeight: '45%',
+                            objectFit: 'contain',
+                            borderRadius: '10px',
+                            boxShadow: `0 0 40px ${purpleTheme.glow}`,
+                            marginBottom: '30px',
+                            animation: 'slideUp 0.8s ease-out'
+                        }}
+                    />
+
+                    {/* Dialogue Box */}
+                    <div style={{
+                        width: '70%', maxWidth: '900px', minHeight: '160px',
+                        background: purpleTheme.bg,
+                        border: `1px solid ${purpleTheme.border}`,
+                        boxShadow: `0 0 30px ${purpleTheme.glow}`,
+                        backdropFilter: 'blur(16px)',
+                        clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)',
+                        display: 'flex', flexDirection: 'column', padding: '0',
+                        animation: 'slideUp 0.8s ease-out 0.2s both',
+                        position: 'relative'
+                    }}>
+                        <div style={{ width: '100%', height: '35px', background: `linear-gradient(90deg, rgba(191, 90, 242, 0.15) 0%, transparent 100%)`, borderBottom: `1px solid ${purpleTheme.border}`, display: 'flex', alignItems: 'center', paddingLeft: '40px' }}>
+                            <div style={{ width: '8px', height: '8px', background: purpleTheme.primary, marginRight: '15px', borderRadius: '50%', boxShadow: `0 0 8px ${purpleTheme.primary}` }}></div>
+                            <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: purpleTheme.primary, letterSpacing: '2px', fontWeight: 'bold' }}>EVIDENCE DISCOVERED</span>
+                        </div>
+                        <div style={{ padding: '1.5rem 2.5rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            <div style={{ display: 'inline-block', background: 'rgba(191, 90, 242, 0.15)', padding: '0.4rem 1.5rem', borderLeft: `4px solid ${purpleTheme.primary}`, marginBottom: '1rem', width: 'fit-content' }}>
+                                <span style={{ color: '#fff', fontSize: '1.2rem', fontWeight: '800' }}>나</span>
+                            </div>
+                            <p style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '1.4rem', lineHeight: '1.6', margin: 0, fontWeight: '400' }}>
+                                이건 A가 남긴 태블릿...? 여기에 무슨 메세지를 남긴게 틀림 없다. 이 태블릿에 숨은 메모를 찾아봐야겠어.
+                            </p>
+                        </div>
+                        <div style={{ position: 'absolute', bottom: '15px', right: '25px', color: purpleTheme.primary, fontSize: '1rem', fontWeight: 'bold', animation: 'bounce 1s infinite', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            CLICK TO INVESTIGATE <span style={{ fontSize: '0.9rem' }}>📱</span>
+                        </div>
+                    </div>
+                </div>
             )}
 
             <style>{`
