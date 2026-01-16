@@ -6,9 +6,10 @@ import newsBackground from '../assets/news_background.jpg';
 const InvestigationHQ = ({ onComplete }) => {
     const [step, setStep] = useState(0);
     const [showNews, setShowNews] = useState(false);
+    const [newsFinished, setNewsFinished] = useState(false); // ✅ 추가
     const [displayedText, setDisplayedText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false); // Debounce click
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const dialogues = [
         "이번에 테스트를 통과한 신입요원인가?",
@@ -20,14 +21,14 @@ const InvestigationHQ = ({ onComplete }) => {
     ];
 
     useEffect(() => {
-        if (showNews && step === 2) return;
+        // Skip if news is showing or already finished this step
+        if (showNews || (step === 2 && newsFinished)) return;
 
         const currentText = dialogues[step];
-        setDisplayedText(''); // Reset
+        setDisplayedText('');
         setIsTyping(true);
 
         let index = 0;
-        // Use slice logic for cleaner updates
         const interval = setInterval(() => {
             if (index <= currentText.length) {
                 setDisplayedText(currentText.slice(0, index));
@@ -35,43 +36,44 @@ const InvestigationHQ = ({ onComplete }) => {
             } else {
                 clearInterval(interval);
                 setIsTyping(false);
-                if (step === 2) {
-                    setTimeout(() => setShowNews(true), 1000);
+
+                // step 2에서는 자동으로 뉴스만 띄움
+                if (step === 2 && !newsFinished) {
+                    setTimeout(() => {
+                        setShowNews(true);
+                    }, 1000);
                 }
             }
         }, 30);
 
         return () => clearInterval(interval);
-    }, [step]);
+    }, [step]); // Only depend on step - removed showNews to prevent infinite loop
 
     const handleNext = () => {
-        if (isProcessing) return; // Ignore clicks during delay
-
-        // Add 300ms delay to prevent accidental double clicks or too fast progression
+        if (isProcessing) return;
         setIsProcessing(true);
         setTimeout(() => setIsProcessing(false), 300);
 
+        // 뉴스가 떠 있는 동안: 클릭 = 뉴스 닫고 다음 대화로
         if (showNews) {
             setShowNews(false);
-            setStep(prev => prev + 1);
+            setNewsFinished(true);
+            setStep(3); // Jump to "자네는 A가 사라진 이유와..."
             return;
         }
-        if (isTyping) {
-            // Optional: Instant finish
-            // setIsTyping(false);
-            // setDisplayedText(dialogues[step]);
-            return;
-        }
+
+        if (isTyping) return;
+
+        // step 2에서는 뉴스 끝나기 전까지 절대 step 증가 금지
+        if (step === 2 && !newsFinished) return;
 
         if (step < dialogues.length - 1) {
             setStep(prev => prev + 1);
         } else {
-            // All dialogues complete - transition to A's Room
             if (onComplete) onComplete();
         }
     };
 
-    // Darker Navy Theme constants
     const navyTheme = {
         primary: '#4fc3f7',
         secondary: '#0d47a1',
@@ -92,9 +94,10 @@ const InvestigationHQ = ({ onComplete }) => {
                 position: 'relative',
                 overflow: 'hidden',
                 fontFamily: '"Pretendard Variable", Pretendard, sans-serif',
-                cursor: 'none' /* Hide Windows cursor for custom digital cursor */
+                cursor: 'none'
             }}
         >
+
             {/* Character */}
             <img
                 src={characterImage}

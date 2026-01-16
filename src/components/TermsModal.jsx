@@ -349,22 +349,45 @@ const TermsModal = ({ onClose, onWrongClause, onCorrectClause, foundClauses, pur
                     >1항 회사는 경영상 또는 기술적 이유로 서비스를 중단할 수 있으며, 이 경우 최소 30일 전 게임 내 및 홈페이지에 공지 후 종료하며, 보유 유료 재화는 잔액 기준 환불 또는 보상합니다.</p>
                 </div>
 
-                {/* Found Hints Display */}
-                {foundClauses.length > 0 && (
-                    <div style={{ background: '#f0f0f0', padding: '15px 20px', borderTop: '1px solid #ddd', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 'bold', color: '#333' }}>🔑 발견한 비밀번호:</span>
-                        {foundClauses.map((clause) => {
+                {/* Found Clauses Display + Hint Button */}
+                <div style={{ background: '#f0f0f0', padding: '15px 20px', borderTop: '1px solid #ddd', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 'bold', color: '#333' }}>🔍 발견한 독소조항:</span>
+                    {foundClauses.length === 0 ? (
+                        <span style={{ color: '#888' }}>아직 없음</span>
+                    ) : (
+                        foundClauses.map((clause) => {
                             const [article, section] = clause.split('-');
-                            return <span key={clause} style={{ background: purpleTheme.primary, color: '#fff', padding: '5px 12px', borderRadius: '20px', fontWeight: 'bold', fontSize: '1rem' }}>{article}-{section}</span>;
-                        })}
-                        {foundClauses.length === 4 && <span style={{ marginLeft: 'auto', color: 'green', fontWeight: 'bold' }}>✅ 모두 찾았다! 비밀번호: 3-2-4-2-5-1-6-1</span>}
-                    </div>
-                )}
+                            return <span key={clause} style={{ background: purpleTheme.primary, color: '#fff', padding: '5px 12px', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.9rem' }}>제{article}조 {section}항</span>;
+                        })
+                    )}
+                    {foundClauses.length === 4 && <span style={{ marginLeft: 'auto', color: 'green', fontWeight: 'bold' }}>✅ 모두 찾음!</span>}
+                </div>
 
-                {/* Close Button */}
-                <button onClick={onClose} style={{ background: '#333', color: '#fff', border: 'none', padding: '15px', fontSize: '1rem', cursor: 'pointer' }}>
-                    닫기 - 서랍으로 돌아가기
-                </button>
+                {/* Footer with Close and Hint buttons */}
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <button onClick={onClose} style={{ flex: 1, background: '#333', color: '#fff', border: 'none', padding: '15px', fontSize: '1rem', cursor: 'pointer' }}>
+                        닫기 - 서랍으로 돌아가기
+                    </button>
+                    {foundClauses.length === 4 && (
+                        <button
+                            onClick={() => {
+                                setInternalDialogue('hint');
+                                typeText("비밀번호는 □조 □항 형식이야. 발견한 독소조항의 번호들을 순서대로 연결하면 돼! 예: 제3조 2항 → 3, 2", null);
+                            }}
+                            style={{
+                                background: purpleTheme.primary,
+                                color: '#fff',
+                                border: 'none',
+                                padding: '15px 25px',
+                                fontSize: '1rem',
+                                cursor: 'pointer',
+                                fontWeight: 'bold'
+                            }}
+                        >
+                            💡 힌트
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* CSS Animations */}
