@@ -36,7 +36,7 @@ const InvestigationHQ = ({ onComplete }) => {
                 clearInterval(interval);
                 setIsTyping(false);
                 if (step === 2) {
-                    setTimeout(() => setShowNews(true), 500);
+                    setTimeout(() => setShowNews(true), 1000);
                 }
             }
         }, 30);
@@ -234,7 +234,9 @@ const InvestigationHQ = ({ onComplete }) => {
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    backdropFilter: 'blur(8px)'
+                    backdropFilter: 'blur(8px)',
+                    opacity: showNews ? 1 : 0,
+                    transition: 'opacity 0.6s ease'
                 }}>
                     <div style={{
                         width: '85%',
