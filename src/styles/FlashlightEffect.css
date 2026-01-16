@@ -1,0 +1,173 @@
+/* =========================================
+   Flashlight Effect Redesign - Physics Based
+   ========================================= */
+
+/* Main Container: Total Darkness */
+.intro-container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    background-color: #000;
+    /* Absolute black */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    cursor: none;
+    /* We provide a custom cursor */
+
+    /* Default variables to prevent initial jump */
+    --x: 50vw;
+    --y: 50vh;
+}
+
+/* 
+   Layer 1: The Dark Void (Text Base)
+   This is the "unlit" state. To be physically correct, 
+   unlit things in a pitch black room are invisible. 
+   So we hide this completely.
+*/
+.text-base {
+    display: none;
+}
+
+/* 
+   Layer 2: The Illuminated Reality
+   Modified to be FULLSCREEN so mask-image coordinates match viewport --x, --y
+*/
+.text-illuminated {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-size: 8rem;
+    font-weight: 900;
+    color: #ffffff;
+    text-transform: uppercase;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+    user-select: none;
+
+    /* 
+       THE MASK (The Light Beam)
+       - var(--x), var(--y) are relative to .intro-container (fullscreen)
+       - Now that this element is also fullscreen, the coordinates match
+       - Offset the mask to where the flashlight head points
+    */
+    mask-image: radial-gradient(circle 150px at calc(var(--x) + 110px) calc(var(--y) - 110px),
+            black 0%,
+            rgba(0, 0, 0, 0.5) 60%,
+            transparent 70%);
+    -webkit-mask-image: radial-gradient(circle 150px at calc(var(--x) + 110px) calc(var(--y) - 110px),
+            black 0%,
+            rgba(0, 0, 0, 0.5) 60%,
+            transparent 70%);
+}
+
+/* 
+   Layer 3: The Flashlight Visual (The Object)
+   Aligned such that the visual 'head' is near the cursor,
+   projecting light towards the top-right offset.
+*/
+.custom-cursor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 150px;
+    height: 150px;
+    pointer-events: none;
+    z-index: 100;
+
+    /*
+       Position centered on cursor, rotated -45deg to point top-right.
+    */
+    transform: translate3d(calc(var(--x) - 20px), calc(var(--y) - 75px), 0) rotate(-45deg);
+
+    /* Optional: Add a subtle drop shadow to the flashlight itself to separate it from the darkness */
+    filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.8));
+}
+
+.flashlight-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* 
+   Layer 4: Atmosphere / Beam Haze (Optional)
+   The visible "beam" cone in the air.
+*/
+.flashlight-beam {
+    position: absolute;
+    top: 10;
+    left: 20;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+
+    /* A faint white glow around the light beam center (not the flashlight body) */
+    background: radial-gradient(circle 200px at calc(var(--x) + 110px) calc(var(--y) - 110px),
+            rgba(255, 255, 255, 0.15) 0%,
+            transparent 70%);
+    mix-blend-mode: screen;
+}
+
+/* Floor Spotlight (Background Ambience) - Kept simple */
+.spotlight-floor {
+    display: none;
+}
+
+/* 
+   Layer 5: Digital Cursor (The Interaction Layer)
+   Visible only when Auth is active (showAuth = true)
+   Replaces the system's "pointer" with a themed crosshair.
+*/
+.digital-cursor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 40px;
+    height: 40px;
+    pointer-events: none;
+    z-index: 2000;
+    /* Must be above AuthCard for visual */
+
+    transform: translate3d(calc(var(--x) - 20px), calc(var(--y) - 20px), 0);
+
+    border: 2px solid #00ff9d;
+    /* Tech Green/Cyan */
+    border-radius: 50%;
+    box-shadow: 0 0 10px #00ff9d, inset 0 0 5px #00ff9d;
+    background: rgba(0, 255, 157, 0.1);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.05s linear;
+    /* Slight smoothness if needed, or remove for raw raw input */
+}
+
+/* Crosshair inner details */
+.digital-cursor::before,
+.digital-cursor::after {
+    content: '';
+    position: absolute;
+    background: #00ff9d;
+}
+
+.digital-cursor::before {
+    width: 100%;
+    height: 1px;
+}
+
+.digital-cursor::after {
+    width: 1px;
+    height: 100%;
+}
