@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import roomBg from '../assets/a_room.png';
+import bedPapersImg from '../assets/bed_papers.png';
 import DialLockPopup from './DialLockPopup';
 import TermsModal from './TermsModal';
 
@@ -10,6 +11,7 @@ const ARoom = ({ onComplete }) => {
     const [isTyping, setIsTyping] = useState(false);
     const [currentMessage, setCurrentMessage] = useState(0);
     const [showDialLock, setShowDialLock] = useState(false);
+    const [showPapersPreview, setShowPapersPreview] = useState(false); // Papers preview before terms
     const [showTerms, setShowTerms] = useState(false);
     const [puzzleSolved, setPuzzleSolved] = useState(false);
     const [hoveredHotspot, setHoveredHotspot] = useState(null);
@@ -79,7 +81,7 @@ const ARoom = ({ onComplete }) => {
         }
         if (hotspot.id === 'papers') {
             if (drawerVisited) {
-                setShowTerms(true);
+                setShowPapersPreview(true);
                 return;
             } else {
                 showMessage("서류가 흩어져 있네... 서랍을 먼저 확인해보자.");
@@ -91,9 +93,17 @@ const ARoom = ({ onComplete }) => {
 
     const showMessage = (msg) => {
         setShowTerms(false);
+        setShowPapersPreview(false);
         setShowDialogue(true);
         typeText(msg);
         setCurrentMessage(2);
+    };
+
+    // Handle papers preview click - transition to terms modal
+    const handlePapersPreviewClick = () => {
+        if (isTyping) return;
+        setShowPapersPreview(false);
+        setShowTerms(true);
     };
 
     // Called when wrong clause clicked - close modal and show message with retry hint
@@ -204,6 +214,65 @@ const ARoom = ({ onComplete }) => {
                 </div>
             )}
 
+            {/* Papers Preview - before Terms Modal */}
+            {showPapersPreview && (
+                <div
+                    onClick={handlePapersPreviewClick}
+                    style={{
+                        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                        background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(8px)',
+                        display: 'flex', flexDirection: 'column',
+                        justifyContent: 'center', alignItems: 'center',
+                        zIndex: 200, cursor: 'pointer', padding: '20px',
+                        animation: 'fadeIn 0.6s ease-out'
+                    }}
+                >
+                    {/* Papers Image */}
+                    <img
+                        src={bedPapersImg}
+                        alt="침대 위 서류"
+                        style={{
+                            maxWidth: '70%',
+                            maxHeight: '50%',
+                            objectFit: 'contain',
+                            borderRadius: '10px',
+                            boxShadow: `0 0 40px ${purpleTheme.glow}`,
+                            marginBottom: '30px',
+                            animation: 'slideUp 0.8s ease-out'
+                        }}
+                    />
+
+                    {/* Dialogue Box */}
+                    <div style={{
+                        width: '70%', maxWidth: '900px', minHeight: '160px',
+                        background: purpleTheme.bg,
+                        border: `1px solid ${purpleTheme.border}`,
+                        boxShadow: `0 0 30px ${purpleTheme.glow}`,
+                        backdropFilter: 'blur(16px)',
+                        clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)',
+                        display: 'flex', flexDirection: 'column', padding: '0',
+                        animation: 'slideUp 0.8s ease-out 0.2s both',
+                        position: 'relative'
+                    }}>
+                        <div style={{ width: '100%', height: '35px', background: `linear-gradient(90deg, rgba(191, 90, 242, 0.15) 0%, transparent 100%)`, borderBottom: `1px solid ${purpleTheme.border}`, display: 'flex', alignItems: 'center', paddingLeft: '40px' }}>
+                            <div style={{ width: '8px', height: '8px', background: purpleTheme.primary, marginRight: '15px', borderRadius: '50%', boxShadow: `0 0 8px ${purpleTheme.primary}` }}></div>
+                            <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: purpleTheme.primary, letterSpacing: '2px', fontWeight: 'bold' }}>EVIDENCE FOUND</span>
+                        </div>
+                        <div style={{ padding: '1.5rem 2.5rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            <div style={{ display: 'inline-block', background: 'rgba(191, 90, 242, 0.15)', padding: '0.4rem 1.5rem', borderLeft: `4px solid ${purpleTheme.primary}`, marginBottom: '1rem', width: 'fit-content' }}>
+                                <span style={{ color: '#fff', fontSize: '1.2rem', fontWeight: '800' }}>나</span>
+                            </div>
+                            <p style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '1.4rem', lineHeight: '1.6', margin: 0, fontWeight: '400' }}>
+                                서류 종이 같이 생겼는데....무슨 약관...? 게임 약관인가 본데?
+                            </p>
+                        </div>
+                        <div style={{ position: 'absolute', bottom: '15px', right: '25px', color: purpleTheme.primary, fontSize: '1rem', fontWeight: 'bold', animation: 'bounce 1s infinite', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            CLICK TO READ <span style={{ fontSize: '0.9rem' }}>▶</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Dial Lock Popup */}
             {showDialLock && (
                 <DialLockPopup
@@ -229,6 +298,8 @@ const ARoom = ({ onComplete }) => {
                 @keyframes lockOn { 0% { transform: scale(2.0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
                 .cursor-blink { animation: blink 1s step-end infinite; }
                 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
             `}</style>
         </div>
     );
