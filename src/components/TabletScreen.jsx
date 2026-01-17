@@ -138,7 +138,7 @@ const TabletScreen = ({ onComplete }) => {
             <div style={{
                 position: 'fixed',
                 left: '20px',
-                top: '50%',
+                top: '30%',
                 transform: 'translateY(-50%)',
                 width: '180px',
                 background: 'rgba(255,255,255,0.08)',
@@ -152,7 +152,7 @@ const TabletScreen = ({ onComplete }) => {
             }}>
                 <h4 style={{
                     margin: '0 0 15px 0',
-                    fontSize: '0.85rem',
+                    fontSize: '1.2em',
                     fontWeight: '700',
                     color: 'rgba(255,255,255,0.9)',
                     letterSpacing: '0.5px',
@@ -164,31 +164,33 @@ const TabletScreen = ({ onComplete }) => {
 
                 <div style={{ marginBottom: '12px' }}>
                     <div style={{
-                        fontSize: '0.7rem',
+                        fontSize: '1rem',
                         color: 'rgba(255,255,255,0.5)',
                         marginBottom: '4px',
                         fontWeight: '600',
                         letterSpacing: '1px'
                     }}>CLICK</div>
                     <div style={{
-                        fontSize: '0.8rem',
+                        fontSize: '1rem',
+                        fontWeight: '600',
                         color: 'rgba(255,255,255,0.85)',
                         lineHeight: '1.4'
                     }}>
-                        터치、선택
+                        터치, 선택
                     </div>
                 </div>
 
                 <div style={{ marginBottom: '12px' }}>
                     <div style={{
-                        fontSize: '0.7rem',
+                        fontSize: '1rem',
                         color: 'rgba(255,255,255,0.5)',
                         marginBottom: '4px',
                         fontWeight: '600',
                         letterSpacing: '1px'
                     }}>DRAG</div>
                     <div style={{
-                        fontSize: '0.8rem',
+                        fontSize: '1rem',
+                        fontWeight: '600',
                         color: 'rgba(255,255,255,0.85)',
                         lineHeight: '1.4'
                     }}>
@@ -204,7 +206,7 @@ const TabletScreen = ({ onComplete }) => {
                     color: 'rgba(255,255,255,0.4)',
                     lineHeight: '1.5'
                 }}>
-                    PC에서도 모바일과 동일한 로직이 적용됩니다.
+                    모바일 작동방식과 동일한 로직이 적용됩니다.
                 </div>
             </div>
 
@@ -244,12 +246,12 @@ const TabletScreen = ({ onComplete }) => {
                                 width: '80px', height: '80px', borderRadius: '50%',
                                 border: '3px solid #333',
                                 display: 'flex', justifyContent: 'center', alignItems: 'center',
-                                fontSize: '2rem', marginBottom: '20px', transition: 'all 0.3s'
+                                fontSize: '2rem', marginBottom: '1px', transition: 'all 0.3s'
                             }}
                                 onMouseEnter={e => { e.currentTarget.style.borderColor = '#666'; e.currentTarget.style.color = '#666'; }}
                                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#333'; }}
                             >⏻</div>
-                            <p style={{ fontSize: '0.9rem', opacity: 0.5 }}>터치하여 전원 켜기</p>
+                            <p style={{ fontSize: '1em', opacity: 0.5 }}>터치하여 전원 켜기</p>
                         </div>
                     )}
 
