@@ -34,7 +34,7 @@ function App() {
     <div className="App" style={{ position: 'relative' }}>
       {/* Digital Cursor - Only for non-intro pages (HQ and onwards) */}
       {/* IntroPage handles its own cursor during Auth phase */}
-      {stage !== 'intro' && stage !== 'tablet' && (
+      {stage !== 'intro' && (
         <div
           className="digital-cursor"
           style={{

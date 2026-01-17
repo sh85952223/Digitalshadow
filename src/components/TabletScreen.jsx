@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import footprintLogo from '../assets/footprint_finder_logo.png';
 
 const TabletScreen = ({ onComplete }) => {
-    // Phases: off, booting, lockscreen, appLaunch
+    // Phases: off, booting, lockscreen, appLaunch, authIntro
     const [phase, setPhase] = useState('off');
     const [showNotification, setShowNotification] = useState(false);
     const [currentTime, setCurrentTime] = useState('');
@@ -9,6 +10,8 @@ const TabletScreen = ({ onComplete }) => {
     const [dismissedOnce, setDismissedOnce] = useState(false);
     const [notificationY, setNotificationY] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
+    const [dialogueText, setDialogueText] = useState('');
+    const [showDialogue, setShowDialogue] = useState(false);
     const dragStartY = useRef(0);
     const notificationRef = useRef(null);
 
@@ -32,6 +35,11 @@ const TabletScreen = ({ onComplete }) => {
             setTimeout(() => {
                 setShowNotification(true);
                 setNotificationY(0);
+                // Show dialogue 0.7s after notification
+                setTimeout(() => {
+                    setDialogueText("A의 위치를 알아내는게 주요 임무인데....어떻게 할까? 들어갈볼까? 태블릿부터 살펴야하나?");
+                    setShowDialogue(true);
+                }, 700);
             }, 1500);
         }, 2000);
     };
@@ -39,13 +47,21 @@ const TabletScreen = ({ onComplete }) => {
     // Handle notification click → go to P2 (appLaunch)
     const handleNotificationClick = () => {
         if (isDragging) return;
+        if (showDialogue) return; // Block interaction while dialogue is showing
         setShowNotification(false);
+        setShowDialogue(false);
         // Go to P2: App Launch (Splash)
         setPhase('appLaunch');
     };
 
+    // Handle dialogue click to dismiss
+    const handleDialogueClick = () => {
+        setShowDialogue(false);
+    };
+
     // Handle drag to dismiss
     const handleDragStart = (e) => {
+        if (showDialogue) return; // Block interaction while dialogue is showing
         e.preventDefault();
         setIsDragging(true);
         dragStartY.current = e.clientY || e.touches?.[0]?.clientY || 0;
@@ -68,6 +84,7 @@ const TabletScreen = ({ onComplete }) => {
         // If dragged up more than 80px, dismiss
         if (notificationY < -80) {
             setShowNotification(false);
+            setShowDialogue(false);
 
             // First time dismiss: +1 heart bonus
             if (!dismissedOnce) {
@@ -79,6 +96,11 @@ const TabletScreen = ({ onComplete }) => {
             setTimeout(() => {
                 setShowNotification(true);
                 setNotificationY(0);
+                // Show second dialogue 0.7s after notification reappears
+                setTimeout(() => {
+                    setDialogueText("계속 뜨는 걸 보니 뭐가 있는 것 같아...들어가보자");
+                    setShowDialogue(true);
+                }, 700);
             }, 1500);
         } else {
             // Snap back
@@ -86,9 +108,19 @@ const TabletScreen = ({ onComplete }) => {
         }
     };
 
-    // App Launch complete → trigger onComplete
+    // App Launch complete → go to P3 (authIntro)
     const handleAppLaunchComplete = () => {
+        setPhase('authIntro');
+    };
+
+    // P3 "본인인증" button click
+    const handleAuthButtonClick = () => {
         if (onComplete) onComplete();
+    };
+
+    // P3 "나중에" button click - show toast and stay
+    const handleLaterClick = () => {
+        // Could show a toast here, for now just do nothing
     };
 
     return (
@@ -314,7 +346,6 @@ const TabletScreen = ({ onComplete }) => {
                             {showNotification && (
                                 <div
                                     ref={notificationRef}
-                                    onClick={handleNotificationClick}
                                     onMouseDown={handleDragStart}
                                     onTouchStart={handleDragStart}
                                     style={{
@@ -322,16 +353,17 @@ const TabletScreen = ({ onComplete }) => {
                                         top: `${50 + notificationY}px`,
                                         left: '50%',
                                         transform: 'translateX(-50%)',
-                                        width: '85%',
+                                        width: '75%',
+                                        maxWidth: '500px',
                                         background: 'rgba(255,255,255,0.95)',
                                         backdropFilter: 'blur(20px)',
-                                        borderRadius: '18px',
-                                        padding: '16px 20px',
+                                        borderRadius: '16px',
+                                        padding: '12px 14px',
                                         boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '15px',
-                                        cursor: 'pointer',
+                                        gap: '12px',
+                                        cursor: 'grab',
                                         animation: notificationY === 0 && !isDragging ? 'slideDown 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)' : 'none',
                                         transition: isDragging ? 'none' : 'top 0.3s ease',
                                         userSelect: 'none'
@@ -339,23 +371,45 @@ const TabletScreen = ({ onComplete }) => {
                                 >
                                     {/* App Icon */}
                                     <div style={{
-                                        width: '45px', height: '45px', borderRadius: '12px',
+                                        width: '40px', height: '40px', borderRadius: '10px',
                                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                                         display: 'flex', justifyContent: 'center', alignItems: 'center',
-                                        fontSize: '1.5rem', flexShrink: 0
+                                        fontSize: '1.3rem', flexShrink: 0
                                     }}>📍</div>
 
                                     {/* Content */}
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                            <span style={{ fontWeight: '700', color: '#333', fontSize: '0.95rem' }}>위치 추적</span>
-                                            <span style={{ fontSize: '0.8rem', color: '#888' }}>지금</span>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                                            <span style={{ fontWeight: '600', color: '#333', fontSize: '0.85rem' }}>위치 추적</span>
+                                            <span style={{ fontSize: '0.75rem', color: '#999' }}>· 지금</span>
                                         </div>
-                                        <p style={{ margin: 0, color: '#555', fontSize: '0.95rem', lineHeight: 1.4 }}>
+                                        <p style={{ margin: 0, color: '#555', fontSize: '0.85rem', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             A의 위치가 궁금하신가요?👀 위치 추적하기🚀
                                         </p>
                                     </div>
-                                    <div style={{ color: '#aaa', fontSize: '1.2rem' }}>›</div>
+
+                                    {/* "지금 알아보기" Button */}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleNotificationClick(); }}
+                                        style={{
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            border: 'none',
+                                            borderRadius: '10px',
+                                            padding: '8px 12px',
+                                            color: '#fff',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            flexShrink: 0,
+                                            boxShadow: '0 3px 10px rgba(102, 126, 234, 0.3)',
+                                            transition: 'transform 0.2s, box-shadow 0.2s',
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 5px 15px rgba(102, 126, 234, 0.5)'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 3px 10px rgba(102, 126, 234, 0.3)'; }}
+                                    >
+                                        지금 알아보기
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -371,33 +425,26 @@ const TabletScreen = ({ onComplete }) => {
                             animation: 'fadeIn 0.5s ease-out',
                             position: 'relative'
                         }}>
-                            {/* Logo */}
-                            <div style={{
-                                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                animation: 'pulse 2s infinite'
-                            }}>
-                                <div style={{
-                                    fontSize: '4rem',
+                            {/* Logo Image */}
+                            <img
+                                src={footprintLogo}
+                                alt="Footprint Finder"
+                                style={{
+                                    width: '230px',
+                                    height: '230px',
+                                    objectFit: 'contain',
                                     marginBottom: '20px',
-                                    filter: 'drop-shadow(0 0 20px rgba(102, 126, 234, 0.5))'
-                                }}>🔍</div>
-                                <h1 style={{
-                                    fontSize: '2.5rem',
-                                    fontWeight: '800',
-                                    background: 'linear-gradient(90deg, #667eea, #764ba2, #f093fb)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    margin: 0,
-                                    letterSpacing: '-1px'
-                                }}>Footprint Finder</h1>
-                                <p style={{
-                                    color: 'rgba(255,255,255,0.5)',
-                                    fontSize: '0.8rem',
-                                    marginTop: '10px',
-                                    fontFamily: 'monospace',
-                                    letterSpacing: '2px'
-                                }}>Secure Trace Engine v3.2</p>
-                            </div>
+                                    filter: 'drop-shadow(0 0 30px rgba(102, 126, 234, 0.5))',
+                                    animation: 'pulse 2s infinite'
+                                }}
+                            />
+                            <p style={{
+                                color: 'rgba(255,255,255,0.5)',
+                                fontSize: '0.8rem',
+                                marginTop: '10px',
+                                fontFamily: 'monospace',
+                                letterSpacing: '2px'
+                            }}>Secure Trace Engine v3.2</p>
 
                             {/* Loading Bar */}
                             <div style={{
@@ -421,6 +468,168 @@ const TabletScreen = ({ onComplete }) => {
                             <AppLaunchTimer onComplete={handleAppLaunchComplete} />
                         </div>
                     )}
+
+                    {/* P3: Auth Intro Screen */}
+                    {phase === 'authIntro' && (
+                        <div style={{
+                            width: '100%', height: '100%',
+                            display: 'flex', flexDirection: 'column',
+                            background: '#f8f9fa',
+                            animation: 'fadeIn 0.5s ease-out',
+                            position: 'relative'
+                        }}>
+                            {/* iOS Style Status Bar */}
+                            <div style={{
+                                height: '35px',
+                                background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '0 20px',
+                                color: '#fff',
+                                fontSize: '0.8rem'
+                            }}>
+                                <span style={{ fontWeight: '600' }}>{currentTime}</span>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <span>📶</span>
+                                    <span>🔋 85%</span>
+                                </div>
+                            </div>
+
+                            {/* App Navigation Bar */}
+                            <div style={{
+                                height: '50px',
+                                background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#fff',
+                                borderBottom: '1px solid rgba(255,255,255,0.1)'
+                            }}>
+                                <span style={{ fontSize: '1rem', fontWeight: '600', letterSpacing: '1px' }}>🚨 긴급 탐색 모드</span>
+                            </div>
+
+                            {/* Content Area */}
+                            <div style={{
+                                flex: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '30px'
+                            }}>
+                                {/* Main Card */}
+                                <div style={{
+                                    background: '#fff',
+                                    borderRadius: '20px',
+                                    padding: '35px 40px',
+                                    boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+                                    textAlign: 'center',
+                                    maxWidth: '380px',
+                                    width: '100%'
+                                }}>
+                                    {/* Icon */}
+                                    <div style={{
+                                        width: '70px',
+                                        height: '70px',
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        borderRadius: '18px',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        margin: '0 auto 18px',
+                                        fontSize: '2rem',
+                                        boxShadow: '0 8px 20px rgba(102, 126, 234, 0.3)'
+                                    }}>🔐</div>
+
+                                    {/* Headline */}
+                                    <h2 style={{
+                                        fontSize: '1.3rem',
+                                        fontWeight: '700',
+                                        color: '#1a1a2e',
+                                        marginBottom: '10px',
+                                        lineHeight: 1.4
+                                    }}>긴급 탐색 모드가 활성화되었습니다.</h2>
+
+                                    {/* Body Text */}
+                                    <p style={{
+                                        fontSize: '0.95rem',
+                                        color: '#666',
+                                        lineHeight: 1.6,
+                                        marginBottom: '12px'
+                                    }}>정확한 탐색을 위해 기기 소유자 본인인증이 필요합니다.</p>
+
+                                    {/* Warning */}
+                                    <p style={{
+                                        fontSize: '0.8rem',
+                                        color: '#e74c3c',
+                                        fontWeight: '500'
+                                    }}>⚠️ 인증 실패 시 30초 대기</p>
+                                </div>
+                            </div>
+
+                            {/* Button Area */}
+                            <div style={{
+                                padding: '15px 30px 25px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '10px'
+                            }}>
+                                {/* Primary Button */}
+                                <button
+                                    onClick={handleAuthButtonClick}
+                                    style={{
+                                        width: '100%',
+                                        maxWidth: '320px',
+                                        padding: '14px 24px',
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        border: 'none',
+                                        borderRadius: '12px',
+                                        color: '#fff',
+                                        fontSize: '1rem',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 6px 20px rgba(102, 126, 234, 0.4)',
+                                        transition: 'transform 0.2s, box-shadow 0.2s'
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.5)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)'; }}
+                                >
+                                    본인인증하고 위치 보기
+                                </button>
+
+                                {/* Secondary Button */}
+                                <button
+                                    onClick={handleLaterClick}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: '#999',
+                                        fontSize: '0.85rem',
+                                        cursor: 'pointer',
+                                        padding: '6px 16px'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.color = '#666'}
+                                    onMouseLeave={e => e.currentTarget.style.color = '#999'}
+                                >
+                                    나중에
+                                </button>
+                            </div>
+
+                            {/* Home Indicator */}
+                            <div style={{
+                                position: 'absolute',
+                                bottom: '8px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                width: '100px',
+                                height: '4px',
+                                background: '#333',
+                                borderRadius: '2px'
+                            }}></div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Home Button */}
@@ -435,6 +644,37 @@ const TabletScreen = ({ onComplete }) => {
                     width: '8px', height: '8px', background: '#1a1a1a', borderRadius: '50%', border: '1px solid #333'
                 }}></div>
             </div>
+
+            {/* Dialogue Box - Outside tablet, bottom of screen (ARoom style) */}
+            {showDialogue && (
+                <div onClick={handleDialogueClick} style={{
+                    position: 'fixed', bottom: '5%', left: '50%', transform: 'translateX(-50%)',
+                    width: '70%', maxWidth: '1000px', minHeight: '180px',
+                    background: 'rgba(15, 5, 25, 0.85)',
+                    border: '1px solid rgba(191, 90, 242, 0.5)',
+                    boxShadow: '0 0 30px rgba(191, 90, 242, 0.3)',
+                    backdropFilter: 'blur(16px)',
+                    clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)',
+                    zIndex: 200, cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', padding: '0'
+                }}>
+                    <div style={{ width: '100%', height: '35px', background: 'linear-gradient(90deg, rgba(191, 90, 242, 0.15) 0%, transparent 100%)', borderBottom: '1px solid rgba(191, 90, 242, 0.5)', display: 'flex', alignItems: 'center', paddingLeft: '40px' }}>
+                        <div style={{ width: '8px', height: '8px', background: '#BF5AF2', marginRight: '15px', borderRadius: '50%', boxShadow: '0 0 8px #BF5AF2' }}></div>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#BF5AF2', letterSpacing: '2px', fontWeight: 'bold' }}>DIGITAL INVESTIGATION // TABLET_ANALYSIS</span>
+                    </div>
+                    <div style={{ padding: '2rem 3rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <div style={{ display: 'inline-block', background: 'rgba(191, 90, 242, 0.15)', padding: '0.4rem 1.5rem', borderLeft: '4px solid #BF5AF2', marginBottom: '1rem', width: 'fit-content' }}>
+                            <span style={{ color: '#fff', fontSize: '1.2rem', fontWeight: '800', letterSpacing: '0.05em' }}>나</span>
+                        </div>
+                        <p style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '1.3rem', lineHeight: '1.6', margin: 0, fontWeight: '400', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                            {dialogueText}
+                        </p>
+                    </div>
+                    <div style={{ position: 'absolute', bottom: '20px', right: '30px', color: '#BF5AF2', fontSize: '1.2rem', fontWeight: 'bold', animation: 'bounce 1s infinite', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        NEXT <span style={{ fontSize: '1.0rem' }}>▼</span>
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 @keyframes pulse {
