@@ -12,8 +12,51 @@ const TabletScreen = ({ onComplete }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [dialogueText, setDialogueText] = useState('');
     const [showDialogue, setShowDialogue] = useState(false);
+    const [loadingProgress, setLoadingProgress] = useState(0); // For P2 loading bar
+    const [showGuiltModal, setShowGuiltModal] = useState(false); // P3 Dark Pattern Modal
+
+    // P4 Inputs
+    const [inputName, setInputName] = useState('');
+    const [inputDOB, setInputDOB] = useState('');
+    const [securityAnswer, setSecurityAnswer] = useState('');
+    const [authError, setAuthError] = useState('');
+    const [lockoutTimer, setLockoutTimer] = useState(0);
+
     const dragStartY = useRef(0);
     const notificationRef = useRef(null);
+
+    // Realistic Loading Animation Effect for P2 (Approx 2s)
+    useEffect(() => {
+        if (phase === 'appLaunch') {
+            setLoadingProgress(0);
+            let progress = 0;
+            // 2 seconds total target
+            const totalDuration = 2000;
+            const intervalTime = 50;
+            const steps = totalDuration / intervalTime; // 40 steps
+            const avgIncrement = 100 / steps; // 2.5 per step
+
+            const interval = setInterval(() => {
+                // Randomize slightly around avgIncrement for realism
+                const increment = Math.max(0.5, avgIncrement + (Math.random() * 2 - 1));
+                progress += increment;
+
+                if (progress >= 100) {
+                    progress = 100;
+                    setLoadingProgress(100);
+                    clearInterval(interval);
+                    // Slight delay after 100% before transition
+                    setTimeout(() => {
+                        handleAppLaunchComplete();
+                    }, 500);
+                } else {
+                    setLoadingProgress(progress);
+                }
+            }, intervalTime);
+
+            return () => clearInterval(interval);
+        }
+    }, [phase]);
 
     useEffect(() => {
         const updateTime = () => {
@@ -115,12 +158,52 @@ const TabletScreen = ({ onComplete }) => {
 
     // P3 "본인인증" button click
     const handleAuthButtonClick = () => {
-        if (onComplete) onComplete();
+        setPhase('authInput'); // Go to P4
     };
 
-    // P3 "나중에" button click - show toast and stay
+    // P3 "나중에" button click - Dark Pattern Logic
     const handleLaterClick = () => {
-        // Could show a toast here, for now just do nothing
+        setShowGuiltModal(true);
+        // User requesting: Show Modal first -> Read time -> Then Dialogue
+        setTimeout(() => {
+            setDialogueText("맞아...서둘러 A의 위치를 찾는게 먼저지. 빨리 인증부터 하자.");
+            setShowDialogue(true);
+        }, 1500); // 1.5s delay for reading the warning
+    };
+
+    const handleGuiltStay = () => {
+        setShowGuiltModal(false);
+    };
+
+    const handleInputVerify = () => {
+        if (lockoutTimer > 0) return;
+
+        // Validation Rule
+        const isNameCorrect = inputName.trim() === '김소희';
+        // Allow just 20080824 for now, can be flexible later
+        const isDOBCorrect = inputDOB.trim() === '20080824';
+        const isAnsCorrect = securityAnswer === 'cake';
+
+        if (isNameCorrect && isDOBCorrect && isAnsCorrect) {
+            // Success -> P5 (Placeholder alert for now)
+            alert("인증 성공! (P5 연결 예정)");
+            if (onComplete) onComplete();
+        } else {
+            // Fail
+            setAuthError('인증 정보가 일치하지 않습니다.');
+            setLockoutTimer(30); // 30s lockout
+
+            // Countdown logic
+            let timeLeft = 30;
+            const timerId = setInterval(() => {
+                timeLeft -= 1;
+                setLockoutTimer(timeLeft);
+                if (timeLeft <= 0) {
+                    clearInterval(timerId);
+                    setAuthError('');
+                }
+            }, 1000);
+        }
     };
 
     return (
@@ -415,14 +498,14 @@ const TabletScreen = ({ onComplete }) => {
                         </div>
                     )}
 
-                    {/* P2: App Launch (Splash Screen) */}
+                    {/* P2: App Launch (Splash Screen) - Clean & Realistic */}
                     {phase === 'appLaunch' && (
                         <div style={{
                             width: '100%', height: '100%',
                             display: 'flex', flexDirection: 'column',
                             justifyContent: 'center', alignItems: 'center',
-                            background: 'linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #0d1b2a 100%)',
-                            animation: 'fadeIn 0.5s ease-out',
+                            background: '#ffffff',
+                            animation: 'fadeIn 0.3s ease-out',
                             position: 'relative'
                         }}>
                             {/* Logo Image */}
@@ -430,42 +513,58 @@ const TabletScreen = ({ onComplete }) => {
                                 src={footprintLogo}
                                 alt="Footprint Finder"
                                 style={{
-                                    width: '230px',
-                                    height: '230px',
+                                    width: '120px',
+                                    height: '120px',
                                     objectFit: 'contain',
-                                    marginBottom: '20px',
-                                    filter: 'drop-shadow(0 0 30px rgba(102, 126, 234, 0.5))',
-                                    animation: 'pulse 2s infinite'
+                                    marginBottom: '16px', // Reduced margin
+                                    filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.08))',
                                 }}
                             />
+                            {/* Logo Text */}
+                            <h1 style={{
+                                fontSize: '2.2rem',
+                                fontWeight: '600',
+                                color: '#1c1c1e',
+                                margin: '0 0 8px 0',
+                                letterSpacing: '-0.02em',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                            }}>Footprint Finder</h1>
+
                             <p style={{
-                                color: 'rgba(255,255,255,0.5)',
-                                fontSize: '0.8rem',
-                                marginTop: '10px',
-                                fontFamily: 'monospace',
-                                letterSpacing: '2px'
+                                color: '#8e8e93',
+                                fontSize: '1rem',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                letterSpacing: '0.5px'
                             }}>Secure Trace Engine v3.2</p>
 
-                            {/* Loading Bar */}
+                            {/* Realistic Circular Progress Loading */}
                             <div style={{
                                 position: 'absolute',
                                 bottom: '80px',
-                                width: '200px',
-                                height: '4px',
-                                background: 'rgba(255,255,255,0.1)',
-                                borderRadius: '2px',
-                                overflow: 'hidden'
+                                width: '40px',
+                                height: '40px',
                             }}>
-                                <div style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    background: 'linear-gradient(90deg, #667eea, #764ba2)',
-                                    animation: 'appLoadingBar 2.5s ease-out forwards'
-                                }}></div>
+                                <svg width="40" height="40" viewBox="0 0 40 40" style={{ transform: 'rotate(-90deg)' }}>
+                                    {/* Track */}
+                                    <circle
+                                        cx="20" cy="20" r="16"
+                                        fill="none"
+                                        stroke="#e5e5ea"
+                                        strokeWidth="4"
+                                    />
+                                    {/* Progress Indicator */}
+                                    <circle
+                                        cx="20" cy="20" r="16"
+                                        fill="none"
+                                        stroke="#007aff"
+                                        strokeWidth="4"
+                                        strokeLinecap="round"
+                                        strokeDasharray={`${2 * Math.PI * 16}`}
+                                        strokeDashoffset={`${2 * Math.PI * 16 * (1 - loadingProgress / 100)}`}
+                                        style={{ transition: 'stroke-dashoffset 0.1s linear' }}
+                                    />
+                                </svg>
                             </div>
-
-                            {/* Auto transition after loading */}
-                            <AppLaunchTimer onComplete={handleAppLaunchComplete} />
                         </div>
                     )}
 
@@ -523,105 +622,370 @@ const TabletScreen = ({ onComplete }) => {
                                 }}>보안 인증</span>
                             </div>
 
-                            {/* Content Area */}
+                            {/* Content Area - Tablet optimized */}
                             <div style={{
                                 flex: 1,
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                padding: '40px 24px'
+                                padding: '40px'
                             }}>
-                                {/* Icon - Simple, muted */}
+                                {/* Mobile-style Panel/Card */}
                                 <div style={{
-                                    width: '56px',
-                                    height: '56px',
-                                    background: '#e5e5ea',
-                                    borderRadius: '14px',
+                                    width: '100%',
+                                    maxWidth: '480px', // Increased from 320px for tablet
                                     display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    marginBottom: '20px'
+                                    flexDirection: 'column',
+                                    alignItems: 'center'
                                 }}>
-                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" strokeWidth="2">
-                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                                        <path d="M7 11V7a5 5 0 0110 0v4" />
-                                    </svg>
+                                    {/* Icon */}
+                                    <div style={{
+                                        width: '64px', // Larger icon
+                                        height: '64px',
+                                        background: '#f2f2f7',
+                                        borderRadius: '16px',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        marginBottom: '10px',
+                                        border: '1px solid #e5e5ea'
+                                    }}>
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#5c5c60" strokeWidth="2.5">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                            <path d="M7 11V7a5 5 0 0110 0v4" />
+                                        </svg>
+                                    </div>
+
+                                    {/* Title */}
+                                    <h2 style={{
+                                        fontSize: '1.6rem', // Significantly larger
+                                        fontWeight: '600',
+                                        color: '#000000',
+                                        marginBottom: '5px',
+                                        textAlign: 'center',
+                                        letterSpacing: '-0.02em',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
+                                    }}>기기 소유자 인증 필요</h2>
+
+                                    {/* Description */}
+                                    <p style={{
+                                        fontSize: '1.05rem',
+                                        color: '#6e6e73',
+                                        lineHeight: 1.5,
+                                        textAlign: 'center',
+                                        maxWidth: '380px',
+                                        marginBottom: '16px',
+                                        wordBreak: 'keep-all' // 단어 단위로 줄바꿈
+                                    }}>
+                                        이 기능을 사용하려면<br />기기 소유자 본인인증을 완료해야 합니다.
+                                    </p>
+
+                                    {/* Warning */}
+                                    <p style={{
+                                        fontSize: '0.9rem',
+                                        color: '#ff3b30',
+                                        textAlign: 'center',
+                                        marginBottom: '40px'
+                                    }}>인증 실패 시 잠시 후 재시도</p>
+
+                                    {/* Primary Button */}
+                                    <button
+                                        onClick={handleAuthButtonClick}
+                                        style={{
+                                            width: '100%',
+                                            height: '52px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            background: '#007aff',
+                                            border: 'none',
+                                            borderRadius: '14px',
+                                            color: '#fff',
+                                            fontSize: '1.05rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            marginBottom: '20px'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.background = '#0062cc'}
+                                        onMouseLeave={e => e.currentTarget.style.background = '#007aff'}
+                                    >
+                                        본인인증 진행
+                                    </button>
+
+                                    {/* Secondary - Subtle Grey Text Link */}
+                                    <button
+                                        onClick={handleLaterClick}
+                                        style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            color: '#aeaeb2', // Lighter grey
+                                            fontSize: '0.9rem',
+                                            fontWeight: '400',
+                                            cursor: 'pointer',
+                                            padding: '8px 16px',
+                                            opacity: 0.5, // More transparent
+                                            transition: 'opacity 0.2s'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                                        onMouseLeave={e => e.currentTarget.style.opacity = '0.5'}
+                                    >
+                                        나중에
+                                    </button>
                                 </div>
-
-                                {/* Title - Dry, system-like */}
-                                <h2 style={{
-                                    fontSize: '1.2rem',
-                                    fontWeight: '600',
-                                    color: '#1c1c1e',
-                                    marginBottom: '8px',
-                                    textAlign: 'center'
-                                }}>기기 소유자 인증 필요</h2>
-
-                                {/* Description */}
-                                <p style={{
-                                    fontSize: '0.9rem',
-                                    color: '#8e8e93',
-                                    lineHeight: 1.5,
-                                    textAlign: 'center',
-                                    maxWidth: '280px',
-                                    marginBottom: '16px'
-                                }}>이 기능을 사용하려면 기기 소유자 본인인증을 완료해야 합니다.</p>
-
-                                {/* Warning - Subtle */}
-                                <p style={{
-                                    fontSize: '0.8rem',
-                                    color: '#ff453a',
-                                    textAlign: 'center'
-                                }}>인증 실패 시 잠시 후 재시도</p>
                             </div>
 
-                            {/* Button Area */}
+                            {/* P3 Dark Pattern Guilt Modal */}
+                            {showGuiltModal && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 0, left: 0, right: 0, bottom: 0,
+                                    background: 'rgba(0,0,0,0.4)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    zIndex: 50 // Below dialogue (which is 100 usually or outside)
+                                }}>
+                                    <div style={{
+                                        width: '300px',
+                                        background: 'rgba(255,255,255,0.95)',
+                                        borderRadius: '14px',
+                                        padding: '20px',
+                                        textAlign: 'center',
+                                        backdropFilter: 'blur(10px)',
+                                        boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+                                    }}>
+                                        <h3 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '8px', color: '#ff3b30' }}>정말 그만두시겠습니까?</h3>
+                                        <p style={{ fontSize: '0.9rem', color: '#333', marginBottom: '20px', lineHeight: 1.4 }}>
+                                            인증을 완료하지 않으면 기기를 사용할 수 없으며,<br />
+                                            <strong>중요한 단서</strong>를 놓칠 수도 있습니다.
+                                        </p>
+                                        <button
+                                            onClick={handleGuiltStay}
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px',
+                                                background: '#007aff',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '10px',
+                                                fontSize: '1rem',
+                                                fontWeight: '600',
+                                                cursor: 'pointer',
+                                                marginBottom: '10px'
+                                            }}
+                                        >
+                                            보안 인증 계속하기
+                                        </button>
+                                        <button
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: '#8e8e93',
+                                                fontSize: '0.85rem',
+                                                cursor: 'default' // Fake disabled feel, or just non-functional for dark pattern simulation
+                                            }}
+                                        >
+                                            취약한 상태로 유지 (비활성)
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* P4: Auth Input Screen */}
+                    {phase === 'authInput' && (
+                        <div style={{
+                            width: '100%', height: '100%',
+                            display: 'flex', flexDirection: 'column',
+                            background: '#f2f2f7',
+                            animation: 'fadeIn 0.3s ease-out'
+                        }}>
+                            {/* Realistic Status Bar */}
                             <div style={{
-                                padding: '16px 24px 32px',
+                                width: '100%',
+                                padding: '0 16px',
+                                height: '24px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                color: '#1c1c1e',
+                                background: 'rgba(242, 242, 247, 0.8)',
+                                backdropFilter: 'blur(10px)',
+                                zIndex: 10
+                            }}>
+                                <span>{currentTime}</span>
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                    <span>●●●○</span>
+                                    <span>▲▼</span>
+                                    <span>85% 🔋</span>
+                                </div>
+                            </div>
+
+                            {/* Nav Bar */}
+                            <div style={{
+                                height: '44px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'rgba(255,255,255,0.8)',
+                                backdropFilter: 'blur(10px)',
+                                borderBottom: '1px solid rgba(0,0,0,0.1)'
+                            }}>
+                                <span style={{ fontWeight: '600', fontSize: '17px' }}>A의 태블릿 보안 인증</span>
+                            </div>
+
+                            {/* Scrollable Content */}
+                            <div style={{
+                                flex: 1,
+                                overflowY: 'auto',
+                                padding: '20px',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '16px'
+                                alignItems: 'center'
                             }}>
-                                {/* Primary Button - Flat, single color */}
-                                <button
-                                    onClick={handleAuthButtonClick}
-                                    style={{
-                                        width: '100%',
-                                        maxWidth: '340px',
-                                        padding: '14px 20px',
-                                        background: '#007aff',
-                                        border: 'none',
-                                        borderRadius: '10px',
-                                        color: '#fff',
-                                        fontSize: '0.95rem',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        transition: 'opacity 0.2s'
-                                    }}
-                                    onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-                                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                                >
-                                    본인인증 진행
-                                </button>
+                                {/* Profile Card */}
+                                <div style={{
+                                    width: '100%', maxWidth: '480px',
+                                    background: '#fff',
+                                    borderRadius: '12px',
+                                    padding: '16px',
+                                    marginBottom: '24px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                                }}>
+                                    <div style={{
+                                        width: '50px', height: '50px',
+                                        borderRadius: '50%',
+                                        background: '#e5e5ea',
+                                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                        marginRight: '16px',
+                                        fontSize: '20px'
+                                    }}>👤</div>
+                                    <div>
+                                        <div style={{ fontSize: '1rem', fontWeight: '600', color: '#000' }}>기기 소유자: A</div>
+                                        <div style={{ fontSize: '0.8rem', color: '#8e8e93' }}>최근 사용: 8월 24일 19:58</div>
+                                    </div>
+                                </div>
 
-                                {/* Secondary - Text link style */}
-                                <button
-                                    onClick={handleLaterClick}
-                                    style={{
-                                        background: 'transparent',
-                                        border: 'none',
-                                        color: '#007aff',
-                                        fontSize: '0.85rem',
-                                        cursor: 'pointer',
-                                        padding: '4px'
-                                    }}
-                                    onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
-                                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                                >
-                                    나중에
-                                </button>
+                                {/* Input Form Container */}
+                                <div style={{ width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                                    {/* Name Input */}
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.9rem', color: '#6e6e73', marginBottom: '8px', marginLeft: '4px' }}>
+                                            이름 <span style={{ fontSize: '0.75rem', color: '#007aff' }}>(일기장/서류 참고)</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={inputName}
+                                            onChange={(e) => setInputName(e.target.value)}
+                                            placeholder="예: 김○○"
+                                            disabled={lockoutTimer > 0}
+                                            style={{
+                                                width: '100%', padding: '12px',
+                                                borderRadius: '10px', border: '1px solid #e5e5ea',
+                                                fontSize: '1rem', background: lockoutTimer > 0 ? '#f2f2f7' : '#fff'
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* DOB Input */}
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.9rem', color: '#6e6e73', marginBottom: '8px', marginLeft: '4px' }}>
+                                            생년월일 (8자리)
+                                        </label>
+                                        <div style={{ position: 'relative' }}>
+                                            <input
+                                                type="text"
+                                                value={inputDOB}
+                                                onChange={(e) => {
+                                                    const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 8);
+                                                    setInputDOB(val);
+                                                }}
+                                                placeholder="YYYYMMDD"
+                                                disabled={lockoutTimer > 0}
+                                                style={{
+                                                    width: '100%', padding: '12px',
+                                                    borderRadius: '10px', border: '1px solid #e5e5ea',
+                                                    fontSize: '1rem', background: lockoutTimer > 0 ? '#f2f2f7' : '#fff'
+                                                }}
+                                            />
+                                            <span style={{ position: 'absolute', right: '12px', top: '12px', fontSize: '1.2rem', opacity: 0.5 }}>📅</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Security Question */}
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.9rem', color: '#6e6e73', marginBottom: '12px', marginLeft: '4px' }}>
+                                            보안 질문: 작년 생일에 가장 기억에 남는 일은?
+                                        </label>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            {[
+                                                { val: 'cake', text: '케이크를 같이 고르고 촛불을 두 번 불었다' },
+                                                { val: 'park', text: '놀이공원에 갔다' },
+                                                { val: 'karaoke', text: '친구들과 노래방에 갔다' }
+                                            ].map((opt) => (
+                                                <label key={opt.val} style={{
+                                                    display: 'flex', alignItems: 'center',
+                                                    padding: '12px', background: '#fff',
+                                                    borderRadius: '10px', border: securityAnswer === opt.val ? '1px solid #007aff' : '1px solid #e5e5ea',
+                                                    cursor: lockoutTimer > 0 ? 'not-allowed' : 'pointer'
+                                                }}>
+                                                    <input
+                                                        type="radio"
+                                                        name="securityQuestion"
+                                                        value={opt.val}
+                                                        checked={securityAnswer === opt.val}
+                                                        onChange={(e) => setSecurityAnswer(e.target.value)}
+                                                        disabled={lockoutTimer > 0}
+                                                        style={{ marginRight: '10px' }}
+                                                    />
+                                                    <span style={{ fontSize: '0.95rem', color: '#000' }}>{opt.text}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Error Message */}
+                                    {authError && (
+                                        <div style={{
+                                            padding: '12px', background: '#ffe5e5',
+                                            borderRadius: '10px', color: '#ff3b30',
+                                            fontSize: '0.9rem', textAlign: 'center',
+                                            fontWeight: '500'
+                                        }}>
+                                            {authError} {lockoutTimer > 0 && `(${lockoutTimer}초 후 재시도)`}
+                                        </div>
+                                    )}
+
+                                    {/* Submit Button */}
+                                    <button
+                                        onClick={handleInputVerify}
+                                        disabled={lockoutTimer > 0}
+                                        style={{
+                                            width: '100%', height: '52px',
+                                            background: lockoutTimer > 0 ? '#aeaeb2' : '#007aff',
+                                            color: '#fff', border: 'none',
+                                            borderRadius: '14px', fontSize: '1.1rem',
+                                            fontWeight: '600', cursor: lockoutTimer > 0 ? 'not-allowed' : 'pointer',
+                                            marginTop: '10px', marginBottom: '20px'
+                                        }}
+                                    >
+                                        인증 완료
+                                    </button>
+
+                                    <div style={{ textAlign: 'center' }}>
+                                        <span style={{ color: '#007aff', fontSize: '0.85rem', textDecoration: 'none' }}>
+                                            인증이 어려우신가요?
+                                        </span>
+                                    </div>
+
+                                </div>
                             </div>
                         </div>
                     )}
