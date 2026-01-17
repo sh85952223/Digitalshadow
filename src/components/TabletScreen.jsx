@@ -469,44 +469,58 @@ const TabletScreen = ({ onComplete }) => {
                         </div>
                     )}
 
-                    {/* P3: Auth Intro Screen */}
+                    {/* P3: Auth Intro Screen - Realistic Tablet OS Style */}
                     {phase === 'authIntro' && (
                         <div style={{
                             width: '100%', height: '100%',
                             display: 'flex', flexDirection: 'column',
-                            background: '#f8f9fa',
-                            animation: 'fadeIn 0.5s ease-out',
-                            position: 'relative'
+                            background: '#f2f2f7',
+                            animation: 'fadeIn 0.3s ease-out'
                         }}>
-                            {/* iOS Style Status Bar */}
+                            {/* System Status Bar - iOS/Android style */}
                             <div style={{
-                                height: '35px',
-                                background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+                                height: '28px',
+                                background: '#f2f2f7',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                padding: '0 20px',
-                                color: '#fff',
-                                fontSize: '0.8rem'
+                                padding: '0 16px',
+                                fontSize: '0.75rem',
+                                color: '#1c1c1e',
+                                fontWeight: '500'
                             }}>
-                                <span style={{ fontWeight: '600' }}>{currentTime}</span>
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                    <span>📶</span>
-                                    <span>🔋 85%</span>
+                                <span>{currentTime}</span>
+                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', fontSize: '0.7rem' }}>
+                                    <span style={{ opacity: 0.6 }}>●●●○</span>
+                                    <span style={{ marginLeft: '4px' }}>▲▼</span>
+                                    <div style={{
+                                        width: '22px', height: '10px',
+                                        border: '1px solid #1c1c1e', borderRadius: '2px',
+                                        position: 'relative', marginLeft: '4px'
+                                    }}>
+                                        <div style={{
+                                            position: 'absolute', left: '1px', top: '1px', bottom: '1px',
+                                            width: '75%', background: '#1c1c1e', borderRadius: '1px'
+                                        }}></div>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* App Navigation Bar */}
+                            {/* Navigation Bar */}
                             <div style={{
-                                height: '50px',
-                                background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+                                height: '44px',
+                                background: 'rgba(255,255,255,0.8)',
+                                backdropFilter: 'blur(10px)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: '#fff',
-                                borderBottom: '1px solid rgba(255,255,255,0.1)'
+                                borderBottom: '0.5px solid rgba(0,0,0,0.1)'
                             }}>
-                                <span style={{ fontSize: '1rem', fontWeight: '600', letterSpacing: '1px' }}>🚨 긴급 탐색 모드</span>
+                                <span style={{
+                                    fontSize: '0.95rem',
+                                    fontWeight: '600',
+                                    color: '#1c1c1e'
+                                }}>보안 인증</span>
                             </div>
 
                             {/* Content Area */}
@@ -516,129 +530,104 @@ const TabletScreen = ({ onComplete }) => {
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                padding: '30px'
+                                padding: '40px 24px'
                             }}>
-                                {/* Main Card */}
+                                {/* Icon - Simple, muted */}
                                 <div style={{
-                                    background: '#fff',
-                                    borderRadius: '20px',
-                                    padding: '35px 40px',
-                                    boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
-                                    textAlign: 'center',
-                                    maxWidth: '380px',
-                                    width: '100%'
+                                    width: '56px',
+                                    height: '56px',
+                                    background: '#e5e5ea',
+                                    borderRadius: '14px',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    marginBottom: '20px'
                                 }}>
-                                    {/* Icon */}
-                                    <div style={{
-                                        width: '70px',
-                                        height: '70px',
-                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                        borderRadius: '18px',
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        margin: '0 auto 18px',
-                                        fontSize: '2rem',
-                                        boxShadow: '0 8px 20px rgba(102, 126, 234, 0.3)'
-                                    }}>🔐</div>
-
-                                    {/* Headline */}
-                                    <h2 style={{
-                                        fontSize: '1.3rem',
-                                        fontWeight: '700',
-                                        color: '#1a1a2e',
-                                        marginBottom: '10px',
-                                        lineHeight: 1.4
-                                    }}>긴급 탐색 모드가 활성화되었습니다.</h2>
-
-                                    {/* Body Text */}
-                                    <p style={{
-                                        fontSize: '0.95rem',
-                                        color: '#666',
-                                        lineHeight: 1.6,
-                                        marginBottom: '12px'
-                                    }}>정확한 탐색을 위해 기기 소유자 본인인증이 필요합니다.</p>
-
-                                    {/* Warning */}
-                                    <p style={{
-                                        fontSize: '0.8rem',
-                                        color: '#e74c3c',
-                                        fontWeight: '500'
-                                    }}>⚠️ 인증 실패 시 30초 대기</p>
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" strokeWidth="2">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                        <path d="M7 11V7a5 5 0 0110 0v4" />
+                                    </svg>
                                 </div>
+
+                                {/* Title - Dry, system-like */}
+                                <h2 style={{
+                                    fontSize: '1.2rem',
+                                    fontWeight: '600',
+                                    color: '#1c1c1e',
+                                    marginBottom: '8px',
+                                    textAlign: 'center'
+                                }}>기기 소유자 인증 필요</h2>
+
+                                {/* Description */}
+                                <p style={{
+                                    fontSize: '0.9rem',
+                                    color: '#8e8e93',
+                                    lineHeight: 1.5,
+                                    textAlign: 'center',
+                                    maxWidth: '280px',
+                                    marginBottom: '16px'
+                                }}>이 기능을 사용하려면 기기 소유자 본인인증을 완료해야 합니다.</p>
+
+                                {/* Warning - Subtle */}
+                                <p style={{
+                                    fontSize: '0.8rem',
+                                    color: '#ff453a',
+                                    textAlign: 'center'
+                                }}>인증 실패 시 잠시 후 재시도</p>
                             </div>
 
                             {/* Button Area */}
                             <div style={{
-                                padding: '15px 30px 25px',
+                                padding: '16px 24px 32px',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center',
-                                gap: '10px'
+                                gap: '16px'
                             }}>
-                                {/* Primary Button */}
+                                {/* Primary Button - Flat, single color */}
                                 <button
                                     onClick={handleAuthButtonClick}
                                     style={{
                                         width: '100%',
-                                        maxWidth: '320px',
-                                        padding: '14px 24px',
-                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        maxWidth: '340px',
+                                        padding: '14px 20px',
+                                        background: '#007aff',
                                         border: 'none',
-                                        borderRadius: '12px',
+                                        borderRadius: '10px',
                                         color: '#fff',
-                                        fontSize: '1rem',
-                                        fontWeight: '700',
+                                        fontSize: '0.95rem',
+                                        fontWeight: '600',
                                         cursor: 'pointer',
-                                        boxShadow: '0 6px 20px rgba(102, 126, 234, 0.4)',
-                                        transition: 'transform 0.2s, box-shadow 0.2s'
+                                        transition: 'opacity 0.2s'
                                     }}
-                                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.5)'; }}
-                                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)'; }}
+                                    onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                                 >
-                                    본인인증하고 위치 보기
+                                    본인인증 진행
                                 </button>
 
-                                {/* Secondary Button */}
+                                {/* Secondary - Text link style */}
                                 <button
                                     onClick={handleLaterClick}
                                     style={{
                                         background: 'transparent',
                                         border: 'none',
-                                        color: '#999',
+                                        color: '#007aff',
                                         fontSize: '0.85rem',
                                         cursor: 'pointer',
-                                        padding: '6px 16px'
+                                        padding: '4px'
                                     }}
-                                    onMouseEnter={e => e.currentTarget.style.color = '#666'}
-                                    onMouseLeave={e => e.currentTarget.style.color = '#999'}
+                                    onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                                 >
                                     나중에
                                 </button>
                             </div>
-
-                            {/* Home Indicator */}
-                            <div style={{
-                                position: 'absolute',
-                                bottom: '8px',
-                                left: '50%',
-                                transform: 'translateX(-50%)',
-                                width: '100px',
-                                height: '4px',
-                                background: '#333',
-                                borderRadius: '2px'
-                            }}></div>
                         </div>
                     )}
                 </div>
 
-                {/* Home Button */}
-                <div style={{
-                    position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
-                    width: '10px', height: '10px', background: '#333', borderRadius: '50%'
-                }}></div>
-
-                {/* Camera */}
+                {/* Camera only - no home button */}
                 <div style={{
                     position: 'absolute', top: '22px', left: '50%', transform: 'translateX(-50%)',
                     width: '8px', height: '8px', background: '#1a1a1a', borderRadius: '50%', border: '1px solid #333'
