@@ -354,7 +354,7 @@ const TabletUpgrade = ({ onBackClick, onPurchaseClick }) => {
                         </div>
 
                         <h2 style={{
-                            color: '#00ffff', fontSize: '1.5rem', fontWeight: 'bold',
+                            color: '#00ffff', fontSize: '1.8rem', fontWeight: 'bold',
                             letterSpacing: '0.05em', marginBottom: '0.5rem',
                             textShadow: '0 0 10px rgba(0,255,255,0.5)'
                         }}>
@@ -363,10 +363,10 @@ const TabletUpgrade = ({ onBackClick, onPurchaseClick }) => {
 
                         <div style={{
                             width: '100%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(0,255,255,0.5), transparent)',
-                            margin: '1rem 0'
+                            margin: '1.2rem 0'
                         }}></div>
 
-                        <p style={{ color: '#e0f2fe', fontSize: '1rem', lineHeight: '1.6', marginBottom: '2rem' }}>
+                        <p style={{ color: '#e0f2fe', fontSize: '1.2rem', lineHeight: '1.6', marginBottom: '2rem' }}>
                             <strong style={{ color: '#38bdf8' }}>'Hidden Subscription(숨겨진 구독)'</strong><br />
                             유형을 찾아냈습니다.
                         </p>
