@@ -1,497 +1,528 @@
 import React, { useState, useEffect } from 'react';
-import phoneBg from '../assets/phone_on_desk.png';
+import { createPortal } from 'react-dom';
+import phoneBg from '../assets/phone_on_desk.png'; // Keeping the desk bg for the 'world' background
 
 const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
-    // Overall view state: 'lock', 'entry', 'home', 'app'
-    const [view, setView] = useState('lock');
+    // State management
+    const [view, setView] = useState('lock'); // lock, entry, home
     const [passcode, setPasscode] = useState('');
     const [isWrong, setIsWrong] = useState(false);
-    const [isSuccess, setIsSuccess] = useState(false);
     const [shake, setShake] = useState(false);
-    const [unlockedMsg, setUnlockedMsg] = useState(false);
+    const [currentTime, setCurrentTime] = useState(new Date());
 
-    // Gacha Kingdom App specific state
-    const [appTab, setAppTab] = useState('main'); // 'main', 'log', 'prob', 'notice'
+    // Dialogue & Interaction State
+    const [dialogue, setDialogue] = useState({ show: false, text: '', onComplete: null });
+    const [gachaUnlocked, setGachaUnlocked] = useState(false);
+    const [appOpen, setAppOpen] = useState(false);
+    const [appTab, setAppTab] = useState('main'); // main, log, prob, notice
     const [noticeOpen, setNoticeOpen] = useState(false);
 
-    const handleKeyClick = (key) => {
-        if (passcode.length < 4) {
-            const nextPasscode = passcode + key;
-            setPasscode(nextPasscode);
+    // Update time
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 10000);
+        return () => clearInterval(timer);
+    }, []);
 
-            // Check immediately for "HIDE"
-            if (nextPasscode.length === 4) {
-                if (nextPasscode.toUpperCase() === 'HIDE') {
-                    handleSuccess();
-                } else {
-                    handleFailure();
+    const timeString = "22:31"; // Fixed plot time or currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const dateString = currentTime.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' });
+
+    // Theme for Dialogue (Exactly matching ARoomRecovered)
+    const purpleTheme = {
+        primary: '#BF5AF2',
+        bg: 'rgba(15, 5, 25, 0.8)',
+        border: 'rgba(191, 90, 242, 0.5)',
+        glow: 'rgba(191, 90, 242, 0.3)'
+    };
+
+    // Initial Dialogue Trigger
+    useEffect(() => {
+        if (view === 'home' && !gachaUnlocked && !appOpen) {
+            const timer = setTimeout(() => {
+                setDialogue({
+                    show: true,
+                    text: "저게 A가 하던 가챠 킹덤이라는 게임이군.",
+                    onComplete: () => setGachaUnlocked(true)
+                });
+            }, 600);
+            return () => clearTimeout(timer);
+        }
+    }, [view, gachaUnlocked, appOpen]);
+
+    // App Open Dialogue Trigger
+    useEffect(() => {
+        if (appOpen) {
+            setAppTab('main');
+            setNoticeOpen(false);
+            const timer = setTimeout(() => {
+                setDialogue({
+                    show: true,
+                    text: "분석 모드..? 이게 뭐지?",
+                    onComplete: null
+                });
+            }, 400);
+            return () => clearTimeout(timer);
+        }
+    }, [appOpen]);
+
+    const handleKey_click = (val) => {
+        if (passcode.length < 4) {
+            const next = passcode + val;
+            setPasscode(next);
+            if (next.length === 4) {
+                if (next.toUpperCase() === 'HIDE') { // Success
+                    setShake(true); // Simple feedback
+                    setTimeout(() => {
+                        setPasscode('');
+                        setShake(false);
+                        setView('home');
+                    }, 400);
+                } else { // Failure
+                    setShake(true);
+                    setTimeout(() => {
+                        setShake(false);
+                        setPasscode('');
+                        setIsWrong(true);
+                        setTimeout(() => {
+                            setIsWrong(false);
+                            onReturnToMirror();
+                        }, 1500);
+                    }, 400);
                 }
             }
         }
     };
 
-    const handleSuccess = () => {
-        setIsSuccess(true);
-        // Haptic feedback simulation
-        setShake(true);
-        setTimeout(() => setShake(false), 200);
-
-        // 0.2s pause then unlock
-        setTimeout(() => {
-            setUnlockedMsg(true);
-            setTimeout(() => {
-                setView('home');
-                setUnlockedMsg(false);
-            }, 800);
-        }, 300);
+    const handleDialogueClick = () => {
+        if (dialogue.onComplete) dialogue.onComplete();
+        setDialogue({ ...dialogue, show: false });
     };
 
-    const handleFailure = () => {
-        setShake(true);
-        setTimeout(() => {
-            setShake(false);
-            setPasscode('');
-            setIsWrong(true);
-            setTimeout(() => {
-                setIsWrong(false);
-                onReturnToMirror();
-            }, 2000);
-        }, 500);
-    };
+    // --- SUB-COMPONENTS ---
 
-    const handleDelete = () => {
-        setPasscode(prev => prev.slice(0, -1));
-    };
+    const StatusBar = () => (
+        <div style={{
+            width: '100%', height: '44px', display: 'flex', justifyContent: 'space-between',
+            alignItems: 'center', padding: '0 24px', fontSize: '15px', fontWeight: '600',
+            color: '#fff', position: 'absolute', top: 0, left: 0, zIndex: 100
+        }}>
+            <span>{timeString}</span>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px' }}>LTE</span>
+                <div style={{ width: '24px', height: '12px', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '3px', position: 'relative', padding: '1px' }}>
+                    <div style={{ width: '12%', height: '100%', backgroundColor: '#ffca28', borderRadius: '1px' }}></div>
+                    <div style={{ position: 'absolute', right: '-3px', top: '3px', width: '2px', height: '4px', backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: '0 1px 1px 0' }}></div>
+                </div>
+            </div>
+        </div>
+    );
 
-    // Time formatting
-    const [time, setTime] = useState(new Date());
-    useEffect(() => {
-        const timer = setInterval(() => setTime(new Date()), 10000);
-        return () => clearInterval(timer);
-    }, []);
-
-    const timeString = "22:31"; // Fixed for narrative
-    const dateString = time.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' });
-
-    const qwertyRows = [
-        ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-        ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-        ['Z', 'X', 'C', 'V', 'B', 'N', 'M']
-    ];
-
-    // Home Screen Icons
-    const homeIcons = [
-        { id: 'diary', name: '일기', icon: '📓', locked: true },
-        { id: 'gacha', name: '가챠킹덤 VIP', icon: '🎮', locked: false },
-        { id: 'settings', name: '설정', icon: '⚙️', locked: true, gray: true }
-    ];
+    const AppIcon = ({ icon, name, color, isGacha, onClick, disabled }) => (
+        <div
+            onClick={onClick}
+            style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+                opacity: disabled ? 0.5 : 1, cursor: disabled ? 'default' : 'pointer',
+                transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                transform: isGacha && !disabled ? 'scale(1.05)' : 'scale(1)'
+            }}
+            className={isGacha && !disabled && !appOpen ? 'gacha-breathing' : ''}
+        >
+            <div style={{
+                width: '64px', height: '64px', borderRadius: '16px',
+                background: color,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '32px', color: '#fff',
+                boxShadow: isGacha && !disabled ? '0 8px 20px rgba(110, 60, 200, 0.4)' : '0 4px 10px rgba(0,0,0,0.2)',
+                position: 'relative', overflow: 'hidden'
+            }}>
+                {icon}
+                {/* Gloss effect */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '40%', background: 'linear-gradient(to bottom, rgba(255,255,255,0.2), transparent)' }}></div>
+            </div>
+            <span style={{ fontSize: '12px', color: '#fff', fontWeight: '400', textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>{name}</span>
+        </div>
+    );
 
     return (
         <div style={{
             position: 'fixed', inset: 0, zIndex: 30000,
             backgroundImage: `url(${phoneBg})`, backgroundSize: 'cover', backgroundPosition: 'center',
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            color: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-            overflow: 'hidden'
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+            backdropFilter: 'blur(8px)', backgroundColor: 'rgba(0,0,0,0.8)', // Darken background to focus on phone
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }}>
-            {/* Global Dark Overlay */}
+
+            {/* --- PHONE DEVICE CONTAINER --- */}
             <div style={{
-                position: 'absolute', inset: 0,
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                backdropFilter: view !== 'lock' ? 'blur(40px) brightness(0.7)' : 'none',
-                transition: 'backdrop-filter 0.5s ease',
-                zIndex: 1
-            }}></div>
-
-            {/* Status Bar (Visible in Home and App) */}
-            {(view === 'home' || view === 'app') && (
+                width: '390px', height: '844px', // iPhone 13/14 Pro dimensions roughly
+                maxHeight: '95vh', // Responsive safety
+                backgroundColor: '#000',
+                borderRadius: '48px',
+                boxShadow: '0 0 0 12px #1c1c1e, 0 0 0 14px #333, 0 20px 60px rgba(0,0,0,0.8)', // Bezel & Shadow
+                position: 'relative', overflow: 'hidden',
+                display: 'flex', flexDirection: 'column'
+            }}>
+                {/* Notch / Dynamic Island placeholder */}
                 <div style={{
-                    zIndex: 10, width: '100%', height: '44px', display: 'flex', justifyContent: 'space-between',
-                    alignItems: 'center', padding: '0 40px', fontSize: '0.9rem', fontWeight: '500',
-                    marginTop: '10px' // Status bar top margin
-                }}>
-                    <div>{timeString}</div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span>LTE</span>
-                        <div style={{ width: '25px', height: '12px', border: '1px solid rgba(255,255,255,0.5)', borderRadius: '2px', position: 'relative', display: 'flex', alignItems: 'center', padding: '1px' }}>
-                            <div style={{ width: '12%', height: '100%', backgroundColor: '#ffcc00' }}></div>
-                            <div style={{ position: 'absolute', right: '-4px', width: '2px', height: '4px', backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: '0 1px 1px 0' }}></div>
-                        </div>
-                        <span style={{ fontSize: '0.75rem' }}>12%</span>
-                    </div>
-                </div>
-            )}
+                    position: 'absolute', top: '0', left: '50%', transform: 'translateX(-50%)',
+                    width: '120px', height: '32px', backgroundColor: '#000',
+                    borderBottomLeftRadius: '18px', borderBottomRightRadius: '18px',
+                    zIndex: 200
+                }}></div>
 
-            {/* 1. LOCK SCREEN */}
-            {view === 'lock' && (
-                <div
-                    onClick={() => setView('entry')}
-                    style={{
-                        zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        width: '100%', height: '100%', cursor: 'pointer', paddingTop: '20%',
-                        padding: '0 40px'
-                    }}
-                >
-                    <div style={{ fontSize: '1.2rem', fontWeight: '500', marginBottom: '10px', opacity: 0.9 }}>
-                        🔒 잠금됨
-                    </div>
-                    <div style={{ fontSize: '5rem', fontWeight: '200', marginBottom: '5px' }}>{timeString}</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '400' }}>{dateString}</div>
+                <StatusBar />
 
-                    <div style={{ position: 'absolute', bottom: '10%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-                        <div style={{ width: '40px', height: '4px', backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: '2px' }}></div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: '400', opacity: 0.8, animation: 'pulse 2s infinite' }}>위로 쓸어서 열기</div>
-                    </div>
-                </div>
-            )}
-
-            {/* 2. PASSCODE ENTRY */}
-            {view === 'entry' && (
+                {/* --- WALLPAPER LAYER --- */}
                 <div style={{
-                    zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    width: '100%', height: '100%', paddingTop: '15%',
-                    animation: 'slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)'
+                    position: 'absolute', inset: 0, zIndex: 0,
+                    background: 'linear-gradient(135deg, #2c3e50 0%, #000000 100%)', // Default wallpaper
                 }}>
-                    {/* Back Button */}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onReturnToMirror(); }}
-                        style={{ position: 'absolute', top: '30px', left: '40px', background: 'none', border: 'none', color: '#fff', fontSize: '1rem', cursor: 'pointer', zIndex: 10 }}
+                    {/* Add a subtle pattern or image if desired */}
+                </div>
+
+                {/* --- VIEW: LOCK SCREEN --- */}
+                {view === 'lock' && (
+                    <div
+                        onClick={() => setView('entry')}
+                        style={{
+                            position: 'relative', zIndex: 1, flex: 1,
+                            display: 'flex', flexDirection: 'column', alignItems: 'center',
+                            paddingTop: '60px', color: '#fff', cursor: 'pointer',
+                            animation: 'fadeIn 0.6s ease-out'
+                        }}
                     >
-                        취소
-                    </button>
+                        <div style={{ fontSize: '20px', marginBottom: '8px' }}>🔒</div>
+                        <div style={{ fontSize: '82px', fontWeight: '200', letterSpacing: '-2px', lineHeight: '1' }}>{timeString}</div>
+                        <div style={{ fontSize: '18px', fontWeight: '500', opacity: 0.8, marginTop: '8px' }}>{dateString}</div>
 
-                    <h2 style={{ fontSize: '1.2rem', fontWeight: '400', marginBottom: '35px', textAlign: 'center' }}>
-                        {isWrong ? '다시 한 번 거울을 보고 와봐.' : '암호 입력'}
-                    </h2>
-
-                    {/* Indicators */}
-                    <div style={{
-                        display: 'flex', gap: '22px', marginBottom: '60px',
-                        transform: shake ? 'translateX(10px)' : 'none',
-                        transition: 'transform 0.1s'
-                    }}>
-                        {[0, 1, 2, 3].map(i => (
-                            <div key={i} style={{
-                                width: '13px', height: '13px', borderRadius: '50%',
-                                border: '1.5px solid #fff',
-                                backgroundColor: passcode.length > i ? '#fff' : 'transparent',
-                                transition: 'background-color 0.2s'
-                            }}></div>
-                        ))}
-                    </div>
-
-                    {/* Unlocked Message */}
-                    {unlockedMsg && (
-                        <div style={{ position: 'absolute', top: '30%', backgroundColor: 'rgba(255,255,255,0.1)', padding: '5px 15px', borderRadius: '15px', fontSize: '0.8rem', opacity: 0.8 }}>
-                            잠금 해제됨
-                        </div>
-                    )}
-
-                    {/* QWERTY Keyboard */}
-                    <div style={{
-                        marginTop: 'auto', marginBottom: '15%', width: '100%', padding: '0 20px',
-                        display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center'
-                    }}>
-                        {qwertyRows.map((row, rowIndex) => (
-                            <div key={rowIndex} style={{
-                                display: 'flex', gap: '6px',
-                                width: '100%', justifyContent: 'center'
-                            }}>
-                                {row.map(char => (
-                                    <button
-                                        key={char}
-                                        onClick={() => handleKeyClick(char)}
-                                        style={{
-                                            flex: 1, maxWidth: '40px', height: '52px',
-                                            borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.15)',
-                                            border: 'none', color: '#fff', fontSize: '1.4rem',
-                                            fontWeight: '400', cursor: 'pointer',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            transition: 'background-color 0.1s',
-                                            backdropFilter: 'blur(10px)',
-                                            boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
-                                        }}
-                                        onMouseDown={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.4)'}
-                                        onMouseUp={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
-                                    >
-                                        {char}
-                                    </button>
-                                ))}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* 3. HOME SCREEN */}
-            {view === 'home' && (
-                <div style={{
-                    zIndex: 2, display: 'flex', flexDirection: 'column', width: '100%', height: '100%',
-                    padding: '40px 10%', animation: 'fadeIn 0.5s ease-out'
-                }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '40px 20px', marginTop: '40px' }}>
-                        {homeIcons.map(icon => (
-                            <div
-                                key={icon.id}
-                                onClick={() => !icon.locked && setView('app')}
-                                style={{
-                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
-                                    cursor: icon.locked ? 'default' : 'pointer',
-                                    filter: icon.gray ? 'grayscale(1)' : 'none',
-                                    opacity: icon.gray ? 0.5 : 1
-                                }}
-                            >
-                                <div style={{
-                                    width: '60px', height: '60px', borderRadius: '14px',
-                                    backgroundColor: 'rgba(255,255,255,0.1)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: '2rem', backdropFilter: 'blur(10px)',
-                                    boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
-                                }}>
-                                    {icon.icon}
-                                </div>
-                                <span style={{ fontSize: '0.75rem', textAlign: 'center', fontWeight: '500' }}>{icon.name}</span>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div style={{ marginTop: 'auto', marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#fff' }}></div>
-                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.3)' }}></div>
+                        <div style={{ marginTop: 'auto', marginBottom: '30px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '40%', height: '5px', backgroundColor: '#fff', borderRadius: '10px' }}></div>
+                            <div style={{ fontSize: '13px', fontWeight: '400', opacity: 0.6 }}>Swipe up to unlock</div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* 4. GACHA KINGDOM APP */}
-            {view === 'app' && (
-                <div style={{
-                    zIndex: 2, display: 'flex', flexDirection: 'column', width: '100%', height: 'calc(100% - 44px)',
-                    backgroundColor: '#111', animation: 'fadeIn 0.3s ease-out', position: 'relative'
-                }}>
-                    {/* App Header */}
+                {/* --- VIEW: PASSCODE --- */}
+                {view === 'entry' && (
                     <div style={{
-                        padding: '20px 35px', borderBottom: '1px solid rgba(255,255,255,0.1)',
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                        backgroundColor: '#1a1a1a'
+                        position: 'relative', zIndex: 2, flex: 1,
+                        backdropFilter: 'blur(30px) saturate(180%)', backgroundColor: 'rgba(0,0,0,0.4)',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        animation: 'slideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '5px', backgroundColor: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🎮</div>
-                            <div>
-                                <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Hayan_0824</div>
-                                <div style={{ fontSize: '0.7rem', color: '#888' }}>VIP (만료됨)</div>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '15px', fontSize: '0.85rem' }}>
-                            <div style={{ color: '#00ccff' }}>💎 0</div>
-                            <div style={{ color: '#ffcc00' }}>🪙 120</div>
-                        </div>
-                    </div>
+                        <button onClick={() => onReturnToMirror()} style={{ position: 'absolute', top: '50px', left: '30px', background: 'none', border: 'none', color: '#fff', fontSize: '16px', fontWeight: '500', cursor: 'pointer', zIndex: 10 }}>Cancel</button>
 
-                    {/* Analysis Mode Banner */}
-                    <div style={{
-                        backgroundColor: '#ff3b30', color: '#fff', padding: '6px', fontSize: '0.75rem',
-                        textAlign: 'center', fontWeight: 'bold', letterSpacing: '1px'
-                    }}>
-                        이 계정은 현재 분석 모드입니다.
-                    </div>
-
-                    {/* Tab Content */}
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '30px' }}>
-                        {appTab === 'main' && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <div style={{
-                                    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '20px',
-                                    border: '1px solid rgba(255,255,255,0.1)', position: 'relative'
-                                }}>
-                                    <h3 style={{ fontSize: '1rem', marginBottom: '15px' }}>최근 뽑기 결과</h3>
-                                    <div style={{ color: '#ff3b30', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '5px' }}>
-                                        플래티넘 레전드 획득 실패
-                                    </div>
-                                    <div style={{ fontSize: '0.8rem', color: '#888' }}>
-                                        마지막 시도: 2025.08.16 22:14
-                                    </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '40px', marginBottom: '20px' }}>
+                            {/* Input Display Group */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px' }}>
+                                <div style={{ fontSize: '17px', fontWeight: '500', color: '#fff' }}>
+                                    {isWrong ? 'Try Again' : 'Enter Passcode'}
                                 </div>
 
-                                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
-                                    <button disabled style={{
-                                        width: '100%', padding: '18px', borderRadius: '12px',
-                                        backgroundColor: '#333', color: '#888', border: 'none',
-                                        fontSize: '1.1rem', fontWeight: 'bold', cursor: 'not-allowed',
-                                        position: 'relative'
-                                    }}>
-                                        더 이상 뽑을 수 없습니다
-                                        <div style={{
-                                            position: 'absolute', inset: 0,
-                                            background: 'radial-gradient(circle, rgba(191,90,242,0.1) 0%, transparent 70%)',
-                                            pointerEvents: 'none'
+                                {/* Dots */}
+                                <div style={{ display: 'flex', gap: '24px', transform: shake ? 'translateX(10px)' : 'none', transition: 'transform 0.1s' }}>
+                                    {[...Array(4)].map((_, i) => (
+                                        <div key={i} style={{
+                                            width: '14px', height: '14px', borderRadius: '50%',
+                                            border: '1.5px solid #fff',
+                                            backgroundColor: passcode.length > i ? '#fff' : 'transparent',
+                                            transition: 'all 0.2s'
                                         }}></div>
-                                    </button>
-                                    <p style={{ fontSize: '0.8rem', color: '#666' }}>잔액이 부족하거나 분석 모드에서는 이용이 불가합니다.</p>
+                                    ))}
                                 </div>
                             </div>
-                        )}
 
-                        {appTab === 'log' && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <h3 style={{ fontSize: '1rem', marginBottom: '10px' }}>최근 10회 뽑기 기록</h3>
-                                {[...Array(9)].map((_, i) => (
-                                    <div key={i} style={{ padding: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                                        <span style={{ color: '#888' }}>[22:{14 - (i + 1)}] 플래티넘 레전드</span>
-                                        <span style={{ color: '#ff3b30' }}>실패</span>
+                            {/* Keypad */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                {[
+                                    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+                                    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+                                    ['Z', 'X', 'C', 'V', 'B', 'N', 'M']
+                                ].map((row, rI) => (
+                                    <div key={rI} style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                                        {row.map(char => (
+                                            <button
+                                                key={char}
+                                                onClick={() => handleKey_click(char)}
+                                                style={{
+                                                    width: '32px', height: '44px', borderRadius: '6px',
+                                                    backgroundColor: 'rgba(255,255,255,0.3)', border: 'none',
+                                                    color: '#fff', fontSize: '20px', fontWeight: '400',
+                                                    boxShadow: '0 1px 0 rgba(0,0,0,0.3)', cursor: 'pointer',
+                                                    transition: 'background-color 0.15s'
+                                                }}
+                                                onMouseDown={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.5)'}
+                                                onMouseUp={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.3)'}
+                                                onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.3)'}
+                                            >{char}</button>
+                                        ))}
                                     </div>
                                 ))}
-                                <div style={{
-                                    padding: '15px', backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: '8px',
-                                    display: 'flex', flexDirection: 'column', gap: '5px', border: '1px solid rgba(255,59,48,0.3)'
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                                        <span>[22:14] 플래티넘 레전드</span>
-                                        <span style={{ color: '#ff3b30' }}>실패</span>
-                                    </div>
-                                    <div style={{ fontSize: '0.8rem', color: '#ff3b30', fontWeight: 'bold' }}>
-                                        보유 재화 부족으로 종료
-                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* --- VIEW: HOME SCREEN --- */}
+                {view === 'home' && (
+                    <div style={{
+                        position: 'relative', zIndex: 1, flex: 1,
+                        display: 'flex', flexDirection: 'column',
+                        padding: '60px 24px 20px',
+                        animation: 'fadeIn 0.5s ease'
+                    }}>
+                        {/* Grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px 14px' }}>
+                            <AppIcon
+                                icon="📓" name="일기" color="#8e8e93"
+                                disabled={dialogue.show || true}
+                            />
+                            <AppIcon
+                                icon="🎮" name="가챠킹덤" color="#5E5CE6" isGacha={true}
+                                disabled={dialogue.show || (!gachaUnlocked)}
+                                onClick={() => {
+                                    if (!dialogue.show && gachaUnlocked) setAppOpen(true);
+                                }}
+                            />
+                            <AppIcon
+                                icon="⚙️" name="설정" color="#828282"
+                                disabled={dialogue.show || true}
+                            />
+                        </div>
+
+                        {/* Dock */}
+                        <div style={{
+                            marginTop: 'auto', marginBottom: '10px',
+                            backgroundColor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(20px)',
+                            borderRadius: '35px', padding: '16px 20px',
+                            display: 'flex', justifyContent: 'space-around', alignItems: 'center'
+                        }}>
+                            <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: '#34c759', display: 'grid', placeItems: 'center', fontSize: '28px', color: '#fff' }}>📞</div>
+                            <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: '#007aff', display: 'grid', placeItems: 'center', fontSize: '28px', color: '#fff' }}>💬</div>
+                            <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: 'linear-gradient(135deg, #ff9500, #ff3b30)', display: 'grid', placeItems: 'center', fontSize: '28px', color: '#fff' }}>♫</div>
+                            <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: '#e5e5ea', display: 'grid', placeItems: 'center', fontSize: '28px', color: '#000' }}>🧭</div>
+                        </div>
+                    </div>
+                )}
+
+                {/* --- APP POPUP (GACHA) --- */}
+                {appOpen && (
+                    <div style={{
+                        position: 'absolute', inset: 0, zIndex: 50,
+                        backgroundColor: '#121212',
+                        display: 'flex', flexDirection: 'column',
+                        animation: 'appLaunch 0.4s cubic-bezier(0.19, 1, 0.22, 1)'
+                    }}>
+                        {/* Fake App Status Bar overlap */}
+                        <div style={{ height: '44px', background: '#1a1a1a' }} />
+
+                        {/* App Header */}
+                        <div style={{ padding: '10px 20px', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #333' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#5E5CE6', display: 'grid', placeItems: 'center' }}>🎮</div>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>Hayan_0824</span>
+                                    <span style={{ fontSize: '11px', color: '#888' }}>VIP Member (Expired)</span>
                                 </div>
                             </div>
-                        )}
+                            <button onClick={() => setAppOpen(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', width: '28px', height: '28px', borderRadius: '50%', color: '#fff', cursor: 'pointer' }}>✕</button>
+                        </div>
 
-                        {appTab === 'prob' && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-                                <div style={{ textAlign: 'center', padding: '30px 20px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '15px' }}>
-                                    <div style={{ fontSize: '0.9rem', color: '#888', marginBottom: '10px' }}>현재 적용 확률</div>
-                                    <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#00ccff' }}>10%</div>
-                                    <div style={{ fontSize: '1rem', marginTop: '5px' }}>플래티넘 레전드</div>
-                                </div>
+                        {/* Warning Banner */}
+                        <div style={{ background: '#FF3B30', color: '#fff', padding: '8px', fontSize: '12px', textAlign: 'center', fontWeight: '700' }}>
+                            ⚠ 분석 모드 (READ ONLY)
+                        </div>
 
-                                <div style={{ fontSize: '0.75rem', color: '#666', textAlign: 'center' }}>
-                                    ※ 확률은 사전 고지 없이 변경될 수 있습니다.
-                                </div>
-
-                                <div style={{ marginTop: '20px' }}>
-                                    <h4 style={{ fontSize: '0.9rem', color: '#888', marginBottom: '15px' }}>과거 확률 기록</h4>
+                        {/* Content Area */}
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', color: '#fff' }}>
+                            {/* MAIN TAB */}
+                            {appTab === 'main' && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%', justifyContent: 'center' }}>
                                     <div style={{
-                                        padding: '15px', borderLeft: '3px solid #666',
-                                        backgroundColor: 'rgba(255,255,255,0.02)',
-                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                        background: 'linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%)',
+                                        borderRadius: '20px', padding: '24px',
+                                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)', border: '1px solid #333',
+                                        textAlign: 'center'
                                     }}>
-                                        <div>
-                                            <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>플래티넘 레전드: 40%</div>
-                                            <div style={{ fontSize: '0.75rem', color: '#666' }}>적용 기간: ~2025.08.12</div>
-                                        </div>
-                                        <div style={{ fontSize: '0.8rem', color: '#666' }}>[과거 기준]</div>
+                                        <div style={{ fontSize: '14px', color: '#888', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>Last Result</div>
+                                        <div style={{ fontSize: '22px', fontWeight: '800', color: '#FF3B30', marginBottom: '5px' }}>FAILURE</div>
+                                        <div style={{ fontSize: '16px', color: '#ddd' }}>플래티넘 레전드 획득 실패</div>
+                                        <div style={{ height: '1px', background: '#444', margin: '15px 0' }}></div>
+                                        <div style={{ fontSize: '12px', color: '#666' }}>2025.08.16 22:14</div>
                                     </div>
-                                </div>
-                            </div>
-                        )}
 
-                        {appTab === 'notice' && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                {!noticeOpen ? (
-                                    <>
-                                        <h3 style={{ fontSize: '1rem', marginBottom: '10px' }}>공지사항</h3>
-                                        {[
-                                            { title: '[이벤트] 여름 한정 코스튬 출시', date: '2025.08.15' },
-                                            { title: '[중요] 일부 아이템 확률 조정 안내', date: '2025.08.13', special: true },
-                                            { title: '[점검] 8월 10일 정기 점검 안내', date: '2025.08.09' },
-                                            { title: '[커뮤니티] 불건전 이용자 제재 안내', date: '2025.08.05' }
-                                        ].map((n, i) => (
-                                            <div
-                                                key={i}
-                                                onClick={() => n.special && setNoticeOpen(true)}
-                                                style={{
-                                                    padding: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)',
-                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                    cursor: n.special ? 'pointer' : 'default',
-                                                    backgroundColor: n.special ? 'rgba(191,90,242,0.05)' : 'transparent'
-                                                }}
-                                            >
-                                                <div style={{ fontSize: '0.9rem', fontWeight: n.special ? 'bold' : 'normal' }}>
-                                                    {n.title}
+                                    <button disabled style={{
+                                        width: '100%', padding: '16px', borderRadius: '14px',
+                                        background: '#2c2c2e', color: '#555', border: '2px solid #333',
+                                        fontSize: '16px', fontWeight: '600', cursor: 'not-allowed'
+                                    }}>
+                                        재화 부족 (0 Coins)
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* LOG TAB */}
+                            {appTab === 'log' && (
+                                <div>
+                                    <h3 style={{ fontSize: '18px', marginBottom: '15px', paddingLeft: '5px' }}>기록 (History)</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        {[...Array(8)].map((_, i) => (
+                                            <div key={i} style={{
+                                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                padding: '12px 16px', background: '#1c1c1e', borderRadius: '12px',
+                                                borderLeft: '4px solid #FF3B30'
+                                            }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span style={{ fontSize: '14px' }}>플래티넘 뽑기</span>
+                                                    <span style={{ fontSize: '11px', color: '#666' }}>2025.08.16 22:{14 - i}</span>
                                                 </div>
-                                                <div style={{ fontSize: '0.75rem', color: '#666' }}>{n.date}</div>
+                                                <span style={{ color: '#FF3B30', fontWeight: 'bold', fontSize: '13px' }}>실패</span>
                                             </div>
                                         ))}
-                                    </>
-                                ) : (
-                                    <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-                                        <button
-                                            onClick={() => setNoticeOpen(false)}
-                                            style={{ background: 'none', border: 'none', color: '#00ccff', padding: '0', marginBottom: '20px', cursor: 'pointer' }}
-                                        >
-                                            ← 목록으로
-                                        </button>
-                                        <h3 style={{ fontSize: '1.2rem', marginBottom: '10px' }}>[중요] 일부 아이템 확률 조정 안내</h3>
-                                        <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '25px' }}>게시일: 2025.08.13</div>
-
-                                        <div style={{ fontSize: '0.95rem', lineHeight: '1.8', color: '#ccc' }}>
-                                            안녕하세요, 가챠킹덤 운영팀입니다.<br /><br />
-                                            항상 저희 게임을 사랑해주시는 모험가님들께 감사의 말씀을 드립니다.<br /><br />
-                                            지속적인 게임 밸런스 유지와 아이템의 가치 보존을 위해 일부 유료 아이템의 확률을 조정하게 되었습니다. 조정된 확률은 2025년 8월 13일 점검 이후부터 적용되오니 이용에 참고해 주시기 바랍니다.<br /><br />
-                                            주요 조정 사항은 다음과 같습니다.<br /><br />
-                                            - 골드 상자 보상 비율 개선<br />
-                                            - 실버 상자 구성품 변경<br />
-                                            - <span style={{ color: '#aaa' }}>플래티넘 레전드 확률이 40% → 10%로 조정됩니다.</span><br />
-                                            - 기타 시스템 안정화 작업<br /><br />
-                                            저희 운영팀은 앞으로도 쾌적한 게임 환경을 제공하기 위해 최선을 다하겠습니다.<br /><br />
-                                            감사합니다.
-                                        </div>
                                     </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                                </div>
+                            )}
 
-                    {/* App Bottom Navigation */}
-                    {!noticeOpen && (
+                            {/* PROB TAB */}
+                            {appTab === 'prob' && (
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ marginTop: '30px', marginBottom: '10px', fontSize: '14px', color: '#888' }}>현재 적용 확률</div>
+                                    <div style={{ fontSize: '48px', fontWeight: '800', background: 'linear-gradient(to right, #30cfd0 0%, #330867 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                                        10%
+                                    </div>
+                                    <div style={{ fontSize: '16px', color: '#fff', fontWeight: '600' }}>플래티넘 레전드</div>
+
+                                    <div style={{ margin: '40px 0', height: '1px', background: '#333' }}></div>
+
+                                    <div style={{ textAlign: 'left', padding: '15px', background: '#1c1c1e', borderRadius: '12px' }}>
+                                        <div style={{ fontSize: '12px', color: '#888', marginBottom: '5px' }}>Previous Cycle</div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span>플래티넘 레전드</span>
+                                            <span style={{ color: '#aaa', textDecoration: 'line-through' }}>40%</span>
+                                        </div>
+                                        <div style={{ fontSize: '11px', color: '#555', marginTop: '10px' }}>Ended: 2025.08.12</div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* NOTICE TAB */}
+                            {appTab === 'notice' && (
+                                <div>
+                                    {!noticeOpen ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            {[
+                                                { t: "⚡ [긴급] 서버 안정화 안내", d: "Today" },
+                                                { t: "💎 [이벤트] 여름맞이 패키지", d: "Yesterday" },
+                                                { t: "📢 [공지] 아이템 확률 조정 안내", d: "2025.08.13", highlight: true },
+                                                { t: "🛡 [클린] 불량이용자 제재", d: "2025.08.10" }
+                                            ].map((n, i) => (
+                                                <div key={i}
+                                                    onClick={() => n.highlight && setNoticeOpen(true)}
+                                                    style={{
+                                                        padding: '16px', background: n.highlight ? 'rgba(94, 92, 230, 0.15)' : 'transparent',
+                                                        borderBottom: '1px solid #222', cursor: n.highlight ? 'pointer' : 'default',
+                                                        display: 'flex', justifyContent: 'space-between'
+                                                    }}
+                                                >
+                                                    <span style={{ color: n.highlight ? '#bf5af2' : '#fff', fontSize: '14px' }}>{n.t}</span>
+                                                    <span style={{ fontSize: '12px', color: '#666' }}>{n.d}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div style={{ animation: 'fadeIn 0.3s' }}>
+                                            <button onClick={() => setNoticeOpen(false)} style={{ background: 'none', border: 'none', color: '#0A84FF', fontSize: '14px', marginBottom: '15px', cursor: 'pointer' }}>&lt; 목록</button>
+                                            <h2 style={{ fontSize: '18px', marginBottom: '10px' }}>[공지] 아이템 확률 조정 안내</h2>
+                                            <p style={{ fontSize: '13px', lineHeight: '1.6', color: '#ccc' }}>
+                                                안녕하세요, 가챠킹덤입니다.<br /><br />
+                                                게임 내 경제 밸런스 유지를 위해 부득이하게 일부 아이템의 획득 확률이 조정됩니다.<br /><br />
+                                                변경 대상: <strong style={{ color: '#FF3B30' }}>플래티넘 레전드 등급</strong><br />
+                                                변경 내용: <strong style={{ color: '#FF3B30' }}>40% → 10%</strong><br /><br />
+                                                이는 8월 13일 점검 후 즉시 적용됩니다.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                        </div>
+
+                        {/* App Nav */}
                         <div style={{
-                            height: '60px', borderTop: '1px solid rgba(255,255,255,0.1)',
-                            display: 'flex', backgroundColor: '#1a1a1a'
+                            height: '60px', background: '#1a1a1a', borderTop: '1px solid #333',
+                            display: 'flex', justifyContent: 'space-around', alignItems: 'center'
                         }}>
                             {[
-                                { id: 'main', label: '홈', icon: '🏠' },
-                                { id: 'log', label: '로그', icon: '📝' },
-                                { id: 'prob', label: '확률', icon: '📊' },
-                                { id: 'notice', label: '공지', icon: '🔔' }
-                            ].map(tab => (
-                                <div
-                                    key={tab.id}
-                                    onClick={() => setAppTab(tab.id)}
-                                    style={{
-                                        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                        justifyContent: 'center', gap: '4px', cursor: 'pointer',
-                                        color: appTab === tab.id ? '#BF5AF2' : '#888',
-                                        backgroundColor: appTab === tab.id ? 'rgba(191,90,242,0.05)' : 'transparent'
+                                { id: 'main', icon: '🏠', l: "홈", msg: "메인 화면이네." },
+                                { id: 'log', icon: '📝', l: "기록", msg: "기록을 볼까..." },
+                                { id: 'prob', icon: '📊', l: "확률", msg: "확률 표라..." },
+                                { id: 'notice', icon: '🔔', l: "공지", msg: "공지사항이군." }
+                            ].map(item => (
+                                <div key={item.id}
+                                    onClick={() => {
+                                        setAppTab(item.id);
+                                        setDialogue({ show: true, text: item.msg, onComplete: null });
                                     }}
-                                >
-                                    <div style={{ fontSize: '1.2rem' }}>{tab.icon}</div>
-                                    <div style={{ fontSize: '0.65rem' }}>{tab.label}</div>
+                                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: appTab === item.id ? 1 : 0.4, cursor: 'pointer' }}>
+                                    <div style={{ fontSize: '20px' }}>{item.icon}</div>
+                                    <div style={{ fontSize: '10px', marginTop: '2px' }}>{item.l}</div>
                                 </div>
                             ))}
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
+
+
+            </div> {/* End Phone Container */}
+
+
+            {/* --- DIALOGUE OVERLAY (EXACT AROOM THEME) --- */}
+            {dialogue.show && createPortal(
+                <div
+                    onClick={handleDialogueClick}
+                    style={{
+                        position: 'fixed', bottom: '10%', left: '50%', transform: 'translateX(-50%)',
+                        width: '70%', maxWidth: '1000px', minHeight: '250px',
+                        background: purpleTheme.bg,
+                        border: `1px solid ${purpleTheme.border}`,
+                        boxShadow: `0 0 30px ${purpleTheme.glow}`,
+                        backdropFilter: 'blur(16px)',
+                        clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)',
+                        zIndex: 50000, cursor: 'pointer', display: 'flex', flexDirection: 'column',
+                        padding: '0',
+                        fontFamily: '"Pretendard Variable", Pretendard, sans-serif'
+                    }}
+                >
+                    <div style={{ width: '100%', height: '35px', background: `linear-gradient(90deg, rgba(191, 90, 242, 0.15) 0%, transparent 100%)`, borderBottom: `1px solid ${purpleTheme.border}`, display: 'flex', alignItems: 'center', paddingLeft: '40px' }}>
+                        <div style={{ width: '8px', height: '8px', background: purpleTheme.primary, marginRight: '15px', borderRadius: '50%', boxShadow: `0 0 8px ${purpleTheme.primary}` }}></div>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: purpleTheme.primary, letterSpacing: '2px', fontWeight: 'bold' }}>DIGITAL INVESTIGATION // PHONE_LOG</span>
+                    </div>
+                    <div style={{ padding: '2.5rem 3rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <div style={{ display: 'inline-block', background: 'rgba(191, 90, 242, 0.15)', padding: '0.4rem 1.5rem', borderLeft: `4px solid ${purpleTheme.primary}`, marginBottom: '1rem', width: 'fit-content' }}>
+                            <span style={{ color: '#fff', fontSize: '1.4rem', fontWeight: '800', letterSpacing: '0.05em' }}>나</span>
+                        </div>
+                        <p style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '1.6rem', lineHeight: '1.6', margin: 0, fontWeight: '400', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                            {dialogue.text}
+                        </p>
+                    </div>
+                    <div style={{ position: 'absolute', bottom: '20px', right: '30px', color: purpleTheme.primary, fontSize: '1.2rem', fontWeight: 'bold', animation: 'bounce 1s infinite', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        NEXT <span style={{ fontSize: '1.0rem' }}>▼</span>
+                    </div>
+                </div>,
+                document.body
             )}
 
             <style>{`
-                @keyframes pulse {
-                    0%, 100% { opacity: 0.8; }
-                    50% { opacity: 0.3; }
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                @keyframes appLaunch { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+                @keyframes gachaGlow { 
+                    0% { box-shadow: 0 0 10px rgba(94, 92, 230, 0.2); }
+                    100% { box-shadow: 0 0 25px rgba(94, 92, 230, 0.8); }
                 }
-                @keyframes slideUp {
-                    from { transform: translateY(100vh); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes shake {
-                    0%, 100% { transform: translateX(0); }
-                    25% { transform: translateX(-5px); }
-                    75% { transform: translateX(5px); }
-                }
+                .gacha-breathing { animation: gachaPulse 2s infinite ease-in-out; }
+                @keyframes gachaPulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
+                @keyframes dialogueSlideUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
             `}</style>
         </div>
     );
