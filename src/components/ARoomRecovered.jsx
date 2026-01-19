@@ -13,7 +13,7 @@ import DialLockPopup from './DialLockPopup';
 import TermsModal from './TermsModal';
 import PhoneAuth from './PhoneAuth';
 
-const ARoomRecovered = ({ onComplete }) => {
+const ARoomRecovered = ({ onComplete, initialPhoneOpen = false }) => {
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [showDialogue, setShowDialogue] = useState(false); // Initially false? Or maybe some entering text?
     const [dialogueText, setDialogueText] = useState('');
@@ -27,7 +27,7 @@ const ARoomRecovered = ({ onComplete }) => {
     const [showHint, setShowHint] = useState(false);
     const [pendingMirrorAction, setPendingMirrorAction] = useState(null);
     const [mirrorChecked, setMirrorChecked] = useState(false);
-    const [showPhoneAuth, setShowPhoneAuth] = useState(false);
+    const [showPhoneAuth, setShowPhoneAuth] = useState(initialPhoneOpen); // Init with prop
 
     // Theme for "Me" (Yellow/Warm) - borrowing from TabletHome style or keeping purple? 
     // User said "copy ARoom.jsx exactly... background only changed...". 

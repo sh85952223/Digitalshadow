@@ -3,6 +3,7 @@ import IntroPage from './components/IntroPage';
 import InvestigationHQ from './components/InvestigationHQ';
 import ARoom from './components/ARoom';
 import ARoomRecovered from './components/ARoomRecovered';
+import PhoneAuth from './components/PhoneAuth';
 import TabletScreen from './components/TabletScreen';
 import './styles/FlashlightEffect.css'; // For global cursor styling
 
@@ -12,12 +13,24 @@ function App() {
   const [devMenuOpen, setDevMenuOpen] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
+  // Direct render for Phone Map/Conclusion Testing
+  const renderPhoneAuthWithMap = () => (
+    <PhoneAuth
+      initialStep={3}
+      onComplete={() => setStage('hq_report')}
+      onReturnToMirror={() => setStage('room_recovered')}
+    />
+  );
+
   // Define all available pages for easy expansion
   const pages = [
     { key: 'intro', label: 'Intro' },
     { key: 'hq', label: 'HQ' },
+    { key: 'hq_report', label: 'HQ (Report Phase)' },
     { key: 'room', label: 'A\'s Room' },
     { key: 'room_recovered', label: 'A\'s Room (Recovered)' },
+    { key: 'room_recovered_phone', label: 'A\'s Room (Phone Auth)' },
+    { key: 'room_recovered_map', label: 'A\'s Room (Map/Conclusion)' },
     // Tablet Expanded Options
     { key: 'tablet-off', label: '📱 Tablet (OFF)', type: 'tablet', phase: 'off' },
     { key: 'tablet-p1', label: '📱 Tablet (P1: Noti)', type: 'tablet', phase: 'p1' },
@@ -143,8 +156,11 @@ function App() {
       {/* Stage-based Rendering */}
       {stage === 'intro' && <IntroPage onComplete={() => setStage('hq')} />}
       {stage === 'hq' && <InvestigationHQ onComplete={() => setStage('room')} />}
+      {stage === 'hq_report' && <InvestigationHQ isReport={true} onComplete={() => setStage('tablet')} />}
       {stage === 'room' && <ARoom onComplete={() => setStage('tablet')} />}
-      {stage === 'room_recovered' && <ARoomRecovered onComplete={() => { }} />}
+      {stage === 'room_recovered' && <ARoomRecovered onComplete={() => setStage('hq_report')} />}
+      {stage === 'room_recovered_phone' && <ARoomRecovered initialPhoneOpen={true} onComplete={() => setStage('hq_report')} />}
+      {stage === 'room_recovered_map' && renderPhoneAuthWithMap()}
       {stage === 'tablet' && <TabletScreen
         onComplete={() => setStage('hq')}
         initialPhase={tabletPhase}

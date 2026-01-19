@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import phoneBg from '../assets/phone_on_desk.png';
+import mapBg from '../assets/map_background_yulryang_1768820978797.png';
 
-const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
+const PhoneAuth = ({ onComplete, onReturnToMirror, initialStep = 0 }) => {
     // State management
-    const [view, setView] = useState('lock'); // lock, entry, home
+    const [view, setView] = useState(initialStep > 0 ? 'home' : 'lock'); // Skip lock if advanced step
     const [passcode, setPasscode] = useState('');
     const [isWrong, setIsWrong] = useState(false);
     const [shake, setShake] = useState(false);
@@ -12,14 +13,14 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
 
     // Dialogue & Interaction State
     const [dialogue, setDialogue] = useState({ show: false, text: '', onComplete: null });
-    const [gachaUnlocked, setGachaUnlocked] = useState(false);
+    const [gachaUnlocked, setGachaUnlocked] = useState(initialStep > 0);
     const [appOpen, setAppOpen] = useState(false);
     const [appTab, setAppTab] = useState('main'); // main, log, prob, notice
     const [noticeOpen, setNoticeOpen] = useState(false);
     const [mapOpen, setMapOpen] = useState(false); // Map App State
 
     // Investigation State: 0:Init, 1:App, 2:NoticeRead, 3:MapUnlocked, 4:FoundPCBang, 5:Insight, 6:Done
-    const [investigationStep, setInvestigationStep] = useState(0);
+    const [investigationStep, setInvestigationStep] = useState(initialStep);
 
     // Visual Cue State
     const [visitedTabs, setVisitedTabs] = useState({ log: false, prob: false, notice: false });
@@ -86,7 +87,7 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                         setTimeout(() => {
                             setDialogue({
                                 show: true,
-                                text: "PC라도 가능하니 왠지 게임은 계속 접속해볼 것 같은데... PC방을 찾아봐야겠어.",
+                                text: "PC 접속도 가능하니 왠지 게임은 계속 접속해볼 것 같은데... 근처 PC방을 찾아봐야겠어.",
                                 onComplete: () => {
                                     setNoticeOpen(false);
                                     setAppOpen(false);
@@ -614,8 +615,15 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
 
                         {/* Map Content (Mock) */}
                         <div style={{ flex: 1, position: 'relative', background: '#2c2c2e', overflow: 'hidden' }}>
-                            {/* Map Grid/Context */}
-                            <div style={{ position: 'absolute', inset: 0, opacity: 0.2, backgroundImage: 'radial-gradient(#555 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                            {/* Map Grid/Context REPLACED with Image */}
+                            <div style={{
+                                position: 'absolute', inset: 0,
+                                backgroundImage: `url(${mapBg})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                opacity: 0.8 // Slightly dim for UI visibility
+                            }}></div>
+                            <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.3)' }}></div>
 
                             {/* Pin */}
                             <div

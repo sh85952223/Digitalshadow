@@ -451,7 +451,7 @@ const TabletRecoveryMission = ({ onRecoverySuccess, onExit, initialStage, onHome
                                 <div style={{ background: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', width: '100%', textAlign: 'center' }}>
                                     <span style={{ fontWeight: 'bold', color: '#3b82f6' }}>매월 15일</span> 자동 결제
                                 </div>
-                                <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '12px' }}>다음 결제일: 2025.02.17</p>
+                                <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '12px' }}>다음 결제일: 2025.02.15</p>
                             </>
                         )}
 

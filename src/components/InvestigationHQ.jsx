@@ -3,28 +3,42 @@ import bgImage from '../assets/디지털수사본부.png';
 import characterImage from '../assets/본부장.png';
 import newsBackground from '../assets/news_background.jpg';
 
-const InvestigationHQ = ({ onComplete }) => {
-    const [step, setStep] = useState(0);
+const InvestigationHQ = ({ onComplete, isReport = false }) => { // isReport prop added
+    const [step, setStep] = useState(isReport ? 10 : 0); // Start at step 10 if report mode
     const [showNews, setShowNews] = useState(false);
-    const [newsFinished, setNewsFinished] = useState(false); // ✅ 추가
+    const [newsFinished, setNewsFinished] = useState(false);
     const [displayedText, setDisplayedText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    const dialogues = [
+    // Original Intro Dialogues (Steps 0-5)
+    const introDialogues = [
         "이번에 테스트를 통과한 신입요원인가?",
         "반갑군. 난 디지털 수사본부 본부장일세.",
         "들어오자마자 바쁘겠군. 화면에 뉴스를 보게.",
         "자네는 A가 사라진 이유와 어디 있는지를 알아내야하네.",
         "단, 특정 기업과 연관된 문제일 수 있으니 비밀스럽게 움직여야하네.",
-        "A의 방에 비밀스럽게 잠입하여 사건을 해결하게."
+        "A의 방에 비밀스럽게 잠입하여 사건을 해결하게.",
+        "그리고 조사하는 과정은 신중하고 신중하게."
     ];
+
+    // Report/Conclusion Dialogues (Steps 10-12)
+    const reportDialogues = [
+        "수고했네. S-Planet PC방이라... 역시 다크 패턴을 이용한 함정이었군.",
+        "자네가 확보한 증거로 해당 게임사의 기만 행위를 입증할 수 있겠어.",
+        "이제 자네가 찾아낸 PC방으로 이동해서 직접 서버에 접속해보게."
+    ];
+
+    const currentDialogues = step >= 10 ? reportDialogues : introDialogues;
+    const currentTextIndex = step >= 10 ? step - 10 : step;
 
     useEffect(() => {
         // Skip if news is showing or already finished this step
-        if (showNews || (step === 2 && newsFinished)) return;
+        if (showNews || (step === 2 && newsFinished && !isReport)) return;
 
-        const currentText = dialogues[step];
+        const currentText = currentDialogues[currentTextIndex]; // Use derived text
+        if (!currentText) return; // safety
+
         setDisplayedText('');
         setIsTyping(true);
 
@@ -37,8 +51,8 @@ const InvestigationHQ = ({ onComplete }) => {
                 clearInterval(interval);
                 setIsTyping(false);
 
-                // step 2에서는 자동으로 뉴스만 띄움
-                if (step === 2 && !newsFinished) {
+                // step 2 (Intro only) - Auto trigger news
+                if (step === 2 && !newsFinished && !isReport) {
                     setTimeout(() => {
                         setShowNews(true);
                     }, 1000);
@@ -47,29 +61,30 @@ const InvestigationHQ = ({ onComplete }) => {
         }, 30);
 
         return () => clearInterval(interval);
-    }, [step]); // Only depend on step - removed showNews to prevent infinite loop
+    }, [step, isReport, newsFinished, showNews]); // Added dependencies
 
     const handleNext = () => {
         if (isProcessing) return;
         setIsProcessing(true);
         setTimeout(() => setIsProcessing(false), 300);
 
-        // 뉴스가 떠 있는 동안: 클릭 = 뉴스 닫고 다음 대화로
+        // News handling (Intro only)
         if (showNews) {
             setShowNews(false);
             setNewsFinished(true);
-            setStep(3); // Jump to "자네는 A가 사라진 이유와..."
+            setStep(3);
             return;
         }
 
         if (isTyping) return;
 
-        // step 2에서는 뉴스 끝나기 전까지 절대 step 증가 금지
-        if (step === 2 && !newsFinished) return;
+        // Intro Step 2 Block
+        if (step === 2 && !newsFinished && !isReport) return;
 
-        if (step < dialogues.length - 1) {
+        if (currentTextIndex < currentDialogues.length - 1) {
             setStep(prev => prev + 1);
         } else {
+            // End of current sequence
             if (onComplete) onComplete();
         }
     };
