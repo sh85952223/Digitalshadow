@@ -3,6 +3,7 @@ import footprintLogo from '../assets/footprint_finder_logo.png';
 import TabletAuthProcessing from './TabletAuthProcessing';
 import TabletTraceMode from './TabletTraceMode';
 import TabletUpgrade from './TabletUpgrade';
+import TabletHighPrecision from './TabletHighPrecision';
 
 const TabletScreen = ({ onComplete, initialPhase }) => {
     // Phases: off, booting, lockscreen, appLaunch, authIntro, authInput, authProcessing, traceMode
@@ -1187,10 +1188,20 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
                             onBackClick={() => setPhase('traceMode')}
                             onPurchaseClick={(action) => {
                                 if (action === 'exit') {
-                                    alert('앱 종료 및 수사 종료 로직 (구현 예정)');
-                                } else {
-                                    alert('결제 완료! 정확도 업그레이드가 적용됩니다. (추후 구현 예정)');
+                                    alert('앱이 종료되었습니다. (수사 계속 진행)');
+                                } else if (action === 'purchase') {
+                                    setPhase('highPrecision');
                                 }
+                            }}
+                        />
+                    )}
+
+                    {/* P8: High Precision Mode */}
+                    {phase === 'highPrecision' && (
+                        <TabletHighPrecision
+                            onRecoveryClick={() => {
+                                alert("가입 취소 및 자산 복구 미션으로 이동합니다. (구현 예정)");
+                                // setPhase('recovery'); // Future P10
                             }}
                         />
                     )}
