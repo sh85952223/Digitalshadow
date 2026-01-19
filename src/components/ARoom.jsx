@@ -26,7 +26,7 @@ const ARoom = ({ onComplete }) => {
 
     const hotspots = [
         { id: 'drawer', label: '서랍 비밀번호', x: 22, y: 78, width: 10, height: 7, isFirst: true, message: null },
-        { id: 'phone', label: '휴대폰', x: 36, y: 63, width: 6, height: 8, isFirst: false, message: "아직은 안 돼. 서랍을 먼저 확인해야 할 것 같아." },
+        { id: 'phone', label: '휴대폰', x: 36, y: 63, width: 6, height: 8, isFirst: false, message: "A의 휴대폰이다. 하지만 아직은 안 돼. 지금은 잠겨있고 힌트도 없어서 아무것도 못해." },
         { id: 'papers', label: '침대 위 서류', x: 2, y: 85, width: 25, height: 15, isFirst: false, message: "서류가 흩어져 있네... 나중에 보자." },
         { id: 'mirror', label: '거울', x: 70, y: 13, width: 21, height: 60, isFirst: false, message: "거울이 깨져있네...일단은 다른 것부터 해결하자." }
     ];

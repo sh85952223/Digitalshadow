@@ -1185,8 +1185,12 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
                     {phase === 'upgrade' && (
                         <TabletUpgrade
                             onBackClick={() => setPhase('traceMode')}
-                            onPurchaseClick={() => {
-                                alert('결제 완료! 정확도 업그레이드가 적용됩니다. (추후 구현 예정)');
+                            onPurchaseClick={(action) => {
+                                if (action === 'exit') {
+                                    alert('앱 종료 및 수사 종료 로직 (구현 예정)');
+                                } else {
+                                    alert('결제 완료! 정확도 업그레이드가 적용됩니다. (추후 구현 예정)');
+                                }
                             }}
                         />
                     )}
