@@ -182,20 +182,20 @@ const TabletHome = ({ onOpenApp, onReturnToRoom, initialApp }) => {
             {showReturnDialogue && createPortal(
                 <div onClick={onReturnToRoom} style={{
                     position: 'fixed', bottom: '10%', left: '50%', transform: 'translateX(-50%)',
-                    width: '70%', maxWidth: '1000px', minHeight: '200px', background: yellowTheme.bg,
+                    width: '70%', maxWidth: '1000px', minHeight: '250px', background: yellowTheme.bg,
                     border: `1px solid ${yellowTheme.border}`, boxShadow: `0 0 30px ${yellowTheme.glow}`,
                     backdropFilter: 'blur(16px)', clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)',
                     zIndex: 10003, cursor: 'pointer', display: 'flex', flexDirection: 'column', padding: '0'
                 }}>
-                    <div style={{ width: '100%', height: '35px', background: `linear-gradient(90deg, rgba(251, 191, 36, 0.15) 0%, transparent 100%)`, borderBottom: `1px solid ${yellowTheme.border}`, display: 'flex', alignItems: 'center', paddingLeft: '40px' }}>
+                    <div style={{ width: '100%', height: '40px', background: `linear-gradient(90deg, rgba(251, 191, 36, 0.15) 0%, transparent 100%)`, borderBottom: `1px solid ${yellowTheme.border}`, display: 'flex', alignItems: 'center', paddingLeft: '40px' }}>
                         <div style={{ width: '8px', height: '8px', background: yellowTheme.primary, marginRight: '15px', borderRadius: '50%', boxShadow: `0 0 8px ${yellowTheme.primary}` }}></div>
                         <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: yellowTheme.primary, letterSpacing: '2px', fontWeight: 'bold' }}>PERSONAL LOG // RECOVERY</span>
                     </div>
                     <div style={{ padding: '2rem 3rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <div style={{ display: 'inline-block', background: 'rgba(251, 191, 36, 0.15)', padding: '0.4rem 1.5rem', borderLeft: `4px solid ${yellowTheme.primary}`, marginBottom: '1.2rem', width: 'fit-content' }}>
+                        <div style={{ display: 'inline-block', background: 'rgba(251, 191, 36, 0.15)', padding: '0.4rem 1.5rem', borderLeft: `4px solid ${yellowTheme.primary}`, marginBottom: '1rem', width: 'fit-content' }}>
                             <span style={{ color: '#fff', fontSize: '1.4rem', fontWeight: '800', letterSpacing: '0.05em' }}>나</span>
                         </div>
-                        <p style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '1.6rem', lineHeight: '1.6', margin: 0, fontWeight: '400', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                        <p style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '1.5rem', lineHeight: '1.6', margin: 0, fontWeight: '400', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
                             다시 A의 방으로 돌아가자. A가 어딘가에 휴대폰 암호에 대한 힌트를 숨겨놓은거야.
                         </p>
                     </div>

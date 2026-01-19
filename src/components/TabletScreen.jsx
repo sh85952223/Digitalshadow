@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import footprintLogo from '../assets/footprint_finder_logo.png';
 import TabletAuthProcessing from './TabletAuthProcessing';
 import TabletTraceMode from './TabletTraceMode';
@@ -51,6 +52,8 @@ const TabletScreen = ({ onComplete, initialPhase, onReturnToRoom }) => {
     const [dialogueQueue, setDialogueQueue] = useState([]); // Queue for multi-step dialogues
     const [showHintModal, setShowHintModal] = useState(false); // Authentication Hint Modal
     const [recoveryStage, setRecoveryStage] = useState(null); // Explicit stage for Recovery Mission deep linking
+    const [showAchievement, setShowAchievement] = useState(false);
+    const [pendingAchievement, setPendingAchievement] = useState(null); // 'guiltBreak' or null
 
     // P4 Inputs
     const [inputName, setInputName] = useState('');
@@ -145,6 +148,10 @@ const TabletScreen = ({ onComplete, initialPhase, onReturnToRoom }) => {
             setDialogueQueue(prev => prev.slice(1));
         } else {
             setShowDialogue(false);
+            if (pendingAchievement === 'guiltBreak') {
+                setShowAchievement(true);
+                setPendingAchievement(null);
+            }
         }
     };
 
@@ -222,12 +229,12 @@ const TabletScreen = ({ onComplete, initialPhase, onReturnToRoom }) => {
             // Step 1 -> Step 2 (Confirmshaming)
             setGuiltStep(2);
         } else {
-            // Step 2 -> User Choice (Future Branch)
-            // For now, maybe just alert or log, as the user said "Next time implementation"
-            // But we must allow clicking it now.
-            // Let's just create a placeholder action
-            console.log("User chose to keep vulnerable (Branch point)");
-            alert("다음 업데이트에서 구현될 분기점입니다.\n(정보 유출 위험 감수 선택)");
+            // Step 2 -> Guilt Pattern Broken
+            setShowGuiltModal(false);
+            setPendingAchievement('guiltBreak');
+            setDialogueText("지금 내가 이 앱에 왜 들어온거지?");
+            setDialogueQueue([]); // Clear or set specific follow-up if needed
+            setShowDialogue(true);
         }
     };
 
@@ -243,6 +250,11 @@ const TabletScreen = ({ onComplete, initialPhase, onReturnToRoom }) => {
 
     const handleGuiltStay = () => {
         setShowGuiltModal(false);
+    };
+
+    const handleAchievementClose = () => {
+        setShowAchievement(false);
+        setPhase('homeScreen');
     };
 
     const handleInputVerify = () => {
@@ -1225,9 +1237,9 @@ const TabletScreen = ({ onComplete, initialPhase, onReturnToRoom }) => {
                                 setPhase('upgrade');
                             }}
                             onExitClick={() => {
-                                // Logic 1: Reconsider -> Home -> Notes
+                                // Logic 1: Reconsider -> Home -> Instructor
                                 setPhase('homeScreen');
-                                setTabletHomeInitialApp('notes');
+                                setTabletHomeInitialApp(null);
                             }}
                         />
                     )}
@@ -1238,9 +1250,9 @@ const TabletScreen = ({ onComplete, initialPhase, onReturnToRoom }) => {
                             onBackClick={() => setPhase('traceMode')}
                             onPurchaseClick={(action) => {
                                 if (action === 'exit') {
-                                    // Logic 2: Exit App -> Home -> Notes
+                                    // Logic 2: Exit App -> Home -> Instructor
                                     setPhase('homeScreen');
-                                    setTabletHomeInitialApp('notes');
+                                    setTabletHomeInitialApp(null);
                                 } else if (action === 'purchase') {
                                     setPhase('highPrecision');
                                 }
@@ -1364,6 +1376,88 @@ const TabletScreen = ({ onComplete, initialPhase, onReturnToRoom }) => {
                         </button>
                     </div>
                 </div>
+            )}
+
+            {/* DARK PATTERN BROKEN REWARD MODAL */}
+            {showAchievement && createPortal(
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    animation: 'fadeIn 0.4s ease-out'
+                }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{
+                        width: '400px',
+                        background: 'linear-gradient(145deg, #1a1025 0%, #0d0612 100%)',
+                        border: '2px solid #BF5AF2',
+                        borderRadius: '24px',
+                        padding: '40px 32px',
+                        textAlign: 'center',
+                        boxShadow: '0 0 50px rgba(191, 90, 242, 0.4), inset 0 0 20px rgba(191, 90, 242, 0.1)',
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}>
+                        {/* Decorative background element */}
+                        <div style={{
+                            position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%',
+                            background: 'radial-gradient(circle, rgba(191, 90, 242, 0.1) 0%, transparent 70%)',
+                            pointerEvents: 'none'
+                        }}></div>
+
+                        <div style={{
+                            width: '80px', height: '80px', background: 'rgba(191, 90, 242, 0.2)',
+                            borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            margin: '0 auto 24px', border: '1px solid rgba(191, 90, 242, 0.5)',
+                            boxShadow: '0 0 20px rgba(191, 90, 242, 0.3)'
+                        }}>
+                            <span style={{ fontSize: '40px' }}>⭐</span>
+                        </div>
+
+                        <h2 style={{
+                            color: '#BF5AF2', fontSize: '1.2rem', fontWeight: '800',
+                            letterSpacing: '0.2em', marginBottom: '12px', textShadow: '0 0 10px rgba(191, 90, 242, 0.5)'
+                        }}>DARK PATTERN BROKEN</h2>
+
+                        <h3 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: '700', marginBottom: '20px', wordBreak: 'keep-all' }}>
+                            "뭔지도 모르는 상황에서 개인정보를 가지고 인증을 하는 것도 좋은 방법은 아닌 것 같아..."
+                        </h3>
+
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px',
+                            padding: '16px', marginBottom: '32px', border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                            <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.95rem', margin: 0 }}>
+                                <strong style={{ color: '#BF5AF2' }}>Confirmshaming (유도된 죄책감)</strong> 유형을 찾아냈습니다.
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={handleAchievementClose}
+                            style={{
+                                width: '100%', padding: '16px', background: '#BF5AF2',
+                                color: '#fff', border: 'none', borderRadius: '14px',
+                                fontSize: '1.1rem', fontWeight: '700', cursor: 'pointer',
+                                transition: 'all 0.2s', boxShadow: '0 4px 15px rgba(191, 90, 242, 0.4)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 6px 20px rgba(191, 90, 242, 0.6)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 15px rgba(191, 90, 242, 0.4)';
+                            }}
+                        >
+                            확인
+                        </button>
+                    </div>
+                </div>,
+                document.body
             )}
 
             <style>{`
