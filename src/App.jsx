@@ -22,6 +22,14 @@ function App() {
     { key: 'tablet-p2', label: '📱 Tablet (P2: Splash)', type: 'tablet', phase: 'p2' },
     { key: 'tablet-p3', label: '📱 Tablet (P3: Intro)', type: 'tablet', phase: 'p3' },
     { key: 'tablet-p4', label: '📱 Tablet (P4: Input)', type: 'tablet', phase: 'p4' },
+    // Recovery Mission Stages
+    { key: 'rec-intro', label: '🛑 Recovery (Intro)', type: 'tablet', phase: 'recovery_intro' },
+    { key: 'rec-settings', label: '🛑 Recovery (Settings)', type: 'tablet', phase: 'recovery_settings' },
+    { key: 'rec-payment', label: '🛑 Recovery (Payment)', type: 'tablet', phase: 'recovery_payment' },
+    { key: 'rec-svc', label: '🛑 Recovery (Service Mgmt)', type: 'tablet', phase: 'recovery_service_mgmt' },
+    { key: 'rec-p1', label: '🛑 Recovery (Popup 1)', type: 'tablet', phase: 'recovery_popup1' },
+    { key: 'rec-p2', label: '🛑 Recovery (Popup 2)', type: 'tablet', phase: 'recovery_popup2' },
+    { key: 'rec-p3', label: '🛑 Recovery (Popup 3)', type: 'tablet', phase: 'recovery_popup3' },
   ];
 
   const handlePageChange = (page) => {
@@ -132,7 +140,7 @@ function App() {
 
       {/* Stage-based Rendering */}
       {stage === 'intro' && <IntroPage onComplete={() => setStage('hq')} />}
-      {stage === 'hq' && <InvestigationHQ onNext={() => setStage('room')} />}
+      {stage === 'hq' && <InvestigationHQ onComplete={() => setStage('room')} />}
       {stage === 'room' && <ARoom onComplete={() => setStage('tablet')} />}
       {stage === 'tablet' && <TabletScreen onComplete={() => setStage('hq')} initialPhase={tabletPhase} />}
     </div>

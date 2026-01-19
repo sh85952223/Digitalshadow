@@ -4,6 +4,7 @@ import TabletAuthProcessing from './TabletAuthProcessing';
 import TabletTraceMode from './TabletTraceMode';
 import TabletUpgrade from './TabletUpgrade';
 import TabletHighPrecision from './TabletHighPrecision';
+import TabletRecoveryMission from './TabletRecoveryMission';
 
 const TabletScreen = ({ onComplete, initialPhase }) => {
     // Phases: off, booting, lockscreen, appLaunch, authIntro, authInput, authProcessing, traceMode
@@ -28,6 +29,9 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
             setPhase('authIntro');
         } else if (initialPhase === 'p4') {
             setPhase('authInput');
+        } else if (initialPhase && initialPhase.startsWith('recovery_')) {
+            setPhase('recoveryMission');
+            setRecoveryStage(initialPhase.replace('recovery_', ''));
         } else {
             setPhase(initialPhase); // 'off', 'booting', etc.
         }
@@ -44,6 +48,7 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
     const [showGuiltModal, setShowGuiltModal] = useState(false); // P3 Dark Pattern Modal
     const [dialogueQueue, setDialogueQueue] = useState([]); // Queue for multi-step dialogues
     const [showHintModal, setShowHintModal] = useState(false); // Authentication Hint Modal
+    const [recoveryStage, setRecoveryStage] = useState(null); // Explicit stage for Recovery Mission deep linking
 
     // P4 Inputs
     const [inputName, setInputName] = useState('');
@@ -67,18 +72,20 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
             const avgIncrement = 100 / steps; // 2.5 per step
 
             const interval = setInterval(() => {
-                // Randomize slightly around avgIncrement for realism
-                const increment = Math.max(0.5, avgIncrement + (Math.random() * 2 - 1));
+                // Optimized randomness: Range [2.0, 3.5] (was [1.5, 3.5]) -> Ensures it doesn't drag
+                // avgIncrement is 2.5
+                const variation = (Math.random() * 1.5) - 0.5; // [-0.5, 1.0]
+                const increment = avgIncrement + variation;
                 progress += increment;
 
                 if (progress >= 100) {
                     progress = 100;
                     setLoadingProgress(100);
                     clearInterval(interval);
-                    // Slight delay after 100% before transition
+                    // Reduced delay from 500ms to 200ms for snappier feel
                     setTimeout(() => {
                         handleAppLaunchComplete();
-                    }, 500);
+                    }, 200);
                 } else {
                     setLoadingProgress(progress);
                 }
@@ -266,6 +273,27 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
         }
     };
 
+    const [heartBreaking, setHeartBreaking] = useState(false);
+
+    const handleHeartLoss = React.useCallback(() => {
+        if (hearts > 0 && !heartBreaking) {
+            setHeartBreaking(true);
+            setTimeout(() => {
+                setHearts(prev => Math.max(0, prev - 1));
+                setHeartBreaking(false);
+            }, 1000);
+        }
+    }, [hearts, heartBreaking]);
+
+    const handleRecoveryClick = () => {
+        setPhase('recoveryMission');
+    };
+
+    const handleRecoverySuccess = () => {
+        // Restore heart visual
+        setHearts(prev => Math.min(3, prev + 1));
+    };
+
     return (
         <div
             style={{
@@ -287,18 +315,22 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
             <style>
                 {`
                 @keyframes shake {
-                    10%, 90% {
-                        transform: translate3d(-1px, 0, 0);
-                    }
-                    20%, 80% {
-                        transform: translate3d(2px, 0, 0);
-                    }
-                    30%, 50%, 70% {
-                        transform: translate3d(-4px, 0, 0);
-                    }
-                    40%, 60% {
-                        transform: translate3d(4px, 0, 0);
-                    }
+                    10%, 90% { transform: translate3d(-1px, 0, 0); }
+                    20%, 80% { transform: translate3d(2px, 0, 0); }
+                    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+                    40%, 60% { transform: translate3d(4px, 0, 0); }
+                }
+                @keyframes heartShakeBreak {
+                    0% { transform: translateX(0); opacity: 1; }
+                    25% { transform: translateX(-5px) rotate(-10deg); }
+                    50% { transform: translateX(5px) rotate(10deg); opacity: 0.8; }
+                    75% { transform: scale(1.2); opacity: 0.5; }
+                    100% { transform: scale(0); opacity: 0; }
+                }
+                @keyframes heartPop {
+                    0% { transform: scale(0); }
+                    50% { transform: scale(1.3); }
+                    100% { transform: scale(1); }
                 }
                 `}
             </style>
@@ -320,7 +352,10 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
                         key={i}
                         style={{
                             fontSize: '1.5rem',
-                            animation: i === hearts - 1 && hearts > 3 ? 'heartPop 0.5s ease' : 'none'
+                            display: 'inline-block',
+                            animation: (heartBreaking && i === hearts - 1)
+                                ? 'heartShakeBreak 1s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards'
+                                : (i === hearts - 1 && hearts > 3 && !dismissedOnce) ? 'heartPop 0.5s ease' : 'none'
                         }}
                     >
                         ❤️
@@ -423,14 +458,13 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
                         : phase === 'booting' ? '#000'
                             : phase === 'appLaunch' ? 'linear-gradient(135deg, #0d1b2a 0%, #1b263b 100%)'
                                 : phase === 'authProcessing' ? '#0a0c14'
-                                    : phase === 'traceMode' ? '#101622'
+                                    : phase === 'traceMode' || phase === 'highPrecision' ? '#101622' // Ensure highPrecision has correct bg
                                         : 'linear-gradient(180deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
                     borderRadius: '20px',
                     overflow: 'hidden',
                     position: 'relative',
                     transition: 'background 0.5s ease'
                 }}>
-                    {/* OFF State */}
                     {phase === 'off' && (
                         <div onClick={handlePowerOn} style={{
                             width: '100%', height: '100%',
@@ -451,7 +485,6 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
                         </div>
                     )}
 
-                    {/* Booting State */}
                     {phase === 'booting' && (
                         <div style={{
                             width: '100%', height: '100%',
@@ -465,6 +498,19 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
                             </div>
                         </div>
                     )}
+
+                    {phase === 'lockscreen' && (
+                        // ... LockScreen content (abbreviated in my thought, but I must match exact target content)
+                        // Actually, I can rely on 'phase === 'lockscreen'' block already there. 
+                        // I will skip replacing lockscreen content if I can target surrounding blocks better.
+                        // But I replaced the whole RETURN block. So I must include EVERYTHING inside return. 
+                        // This uses a LOT of tokens and is risky. 
+                        // I shall target specific blocks instead.
+                        // I need to only replace the top part (Hearts logic) and the bottom part (TabletHighPrecision usage).
+                        // Let's abort this full replacement and do split replacements.
+                        null
+                    )}
+
 
                     {/* Lock Screen (P0/P1) */}
                     {phase === 'lockscreen' && (
@@ -1199,10 +1245,15 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
                     {/* P8: High Precision Mode */}
                     {phase === 'highPrecision' && (
                         <TabletHighPrecision
-                            onRecoveryClick={() => {
-                                alert("가입 취소 및 자산 복구 미션으로 이동합니다. (구현 예정)");
-                                // setPhase('recovery'); // Future P10
-                            }}
+                            onRecoveryClick={handleRecoveryClick}
+                            onHeartLoss={handleHeartLoss}
+                        />
+                    )}
+
+                    {phase === 'recoveryMission' && (
+                        <TabletRecoveryMission
+                            onRecoverySuccess={handleRecoverySuccess}
+                            initialStage={recoveryStage}
                         />
                     )}
                 </div>

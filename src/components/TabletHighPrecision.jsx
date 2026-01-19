@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
-const TabletHighPrecision = ({ onRecoveryClick }) => {
+const TabletHighPrecision = ({ onRecoveryClick, onHeartLoss }) => {
     // Phases: 'scanning' -> 'failed' -> 'realization' (monologue) -> 'payment_alert' -> 'asset_loss'
     const [phase, setPhase] = useState('scanning');
     const [monologuePhase, setMonologuePhase] = useState('none'); // none, active
@@ -9,9 +9,11 @@ const TabletHighPrecision = ({ onRecoveryClick }) => {
 
     // Visual States
     const [flash, setFlash] = useState(false);
-    const [hearts, setHearts] = useState([1, 1, 1]); // 1=active, 0=lost
     const [showPaymentNotif, setShowPaymentNotif] = useState(false);
     const [showAssetPopup, setShowAssetPopup] = useState(false);
+
+    // Guard Ref for strict mode
+    const realizationTriggered = useRef(false);
 
     const monologueLines = [
         "아....!",
@@ -22,37 +24,42 @@ const TabletHighPrecision = ({ onRecoveryClick }) => {
 
     // Sequence Controller
     useEffect(() => {
+        // Prevent re-running if we are already deep in the sequence (handled by internal timeouts)
+        // We only want to trigger the START of the sequence when phase changes to 'realization'
+
         if (phase === 'scanning') {
             const timer = setTimeout(() => {
-                setPhase('failed');
-                // Auto trigger monologue after fail? Or wait for user?
                 // User requirement: "Scanning -> Fail -> Monologue"
-                // Let's trigger showing the Fail UI, then auto-start monologue or wait for click.
-                // For better UX, let's show Fail state for 1.5s then start monologue.
+                setPhase('failed');
+                // Show Fail UI for 1.5s then start monologue
                 setTimeout(() => setMonologuePhase('active'), 1500);
             }, 3000);
             return () => clearTimeout(timer);
         }
 
         if (phase === 'realization') {
-            // Trigger Payment Alert Sequence
+            // Trigger Payment Alert Sequence after monologue
+            // Use Ref to strictly ensure this only runs once per lifecycle/reset
+            if (realizationTriggered.current) return;
+            realizationTriggered.current = true;
+
             setFlash(true);
             setTimeout(() => setFlash(false), 200);
 
             // 1. Payment Notification
             setShowPaymentNotif(true);
 
-            // 2. Heart Break (after 1.5s)
+            // 2. Heart Break (Global) - after 1s
             setTimeout(() => {
-                setHearts([1, 1, 0]); // Break heart
+                if (onHeartLoss) onHeartLoss();
             }, 1000);
 
-            // 3. Asset Loss Popup (after notification lingers a bit, e.g. 2.5s)
+            // 3. Asset Loss Popup - after 2.5s
             setTimeout(() => {
                 setShowAssetPopup(true);
             }, 2500);
         }
-    }, [phase]);
+    }, [phase, onHeartLoss]);
 
     const handleMonologueClick = () => {
         if (monologueIndex < monologueLines.length - 1) {
@@ -79,7 +86,7 @@ const TabletHighPrecision = ({ onRecoveryClick }) => {
                     width: '100%', height: '100%',
                     backgroundImage: "url('https://tile.openstreetmap.org/16/55797/25271.png')",
                     backgroundSize: 'cover', backgroundPosition: 'center',
-                    filter: phase === 'failed' || phase === 'realization' ? 'grayscale(1) brightness(0.4)' : 'brightness(0.75)',
+                    filter: phase === 'failed' || phase === 'realization' ? 'grayscale(1) brightness(0.3)' : 'brightness(0.75)',
                     transition: 'filter 1s'
                 }}></div>
 
@@ -98,7 +105,7 @@ const TabletHighPrecision = ({ onRecoveryClick }) => {
                     )}
                     {phase === 'failed' && (
                         <div style={{ textAlign: 'center', animation: 'fadeIn 0.5s' }}>
-                            <div style={{ fontSize: '3rem', marginBottom: '1rem', textShadow: '0 0 20px #ef4444' }}>📡❌</div>
+                            <div style={{ fontSize: '4rem', marginBottom: '1rem', textShadow: '0 0 30px #ef4444', animation: 'pulse 2s infinite' }}>📡❌</div>
                         </div>
                     )}
                 </div>
@@ -111,34 +118,26 @@ const TabletHighPrecision = ({ onRecoveryClick }) => {
                 </div>
                 <h2 style={{ color: 'white', fontSize: '1.125rem', fontWeight: 'bold', flex: 1, textAlign: 'center', textShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>위치 대시보드</h2>
                 <div style={{ width: 'auto', display: 'flex', justifyContent: 'flex-end', gap: '8px', alignItems: 'center' }}>
-                    {/* Hearts Display */}
-                    <div style={{ display: 'flex', gap: '2px', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '12px' }}>
-                        {hearts.map((active, i) => (
-                            <span key={i} style={{
-                                fontSize: '1.2rem',
-                                filter: active ? 'none' : 'grayscale(1) brightness(0.5)',
-                                opacity: active ? 1 : 0.5,
-                                transition: 'all 0.5s',
-                                display: 'inline-block',
-                                animation: (!active && i === 2) ? 'heartShake 0.5s, heartBreak 0.5s 0.5s forwards' : 'none'
-                            }}>
-                                {active ? '❤️' : '💔'}
-                            </span>
-                        ))}
-                    </div>
                     <button style={{ width: '3rem', height: '3rem', borderRadius: '50%', background: 'rgba(16, 22, 34, 0.5)', backdropFilter: 'blur(12px)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         🔔
                     </button>
                 </div>
             </div>
 
-            {/* Bottom Status Panel */}
-            <div style={{ marginTop: 'auto', zIndex: 30, padding: '1rem', paddingBottom: '2rem', position: 'absolute', bottom: 0, width: '100%', boxSizing: 'border-box' }}>
+            {/* Bottom Status Panel - Dynamic Height & Style */}
+            <div style={{
+                marginTop: 'auto', zIndex: 30, padding: '1rem', paddingBottom: '2rem', position: 'absolute', bottom: 0, width: '100%', boxSizing: 'border-box',
+                transition: 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+            }}>
                 <div style={{
-                    background: 'rgba(16, 22, 34, 0.95)', backdropFilter: 'blur(24px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '1rem', padding: '1.25rem',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', display: 'flex', flexDirection: 'column', gap: '1rem',
-                    transition: 'border-color 0.3s'
+                    background: phase === 'failed' ? 'rgba(30, 10, 10, 0.95)' : 'rgba(16, 22, 34, 0.95)',
+                    backdropFilter: 'blur(24px)',
+                    border: phase === 'failed' ? '1px solid rgba(239, 68, 68, 0.6)' : '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '1.5rem', padding: phase === 'failed' ? '2rem' : '1.25rem',
+                    boxShadow: phase === 'failed' ? '0 0 40px rgba(239, 68, 68, 0.2)' : '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                    display: 'flex', flexDirection: 'column', gap: '1rem',
+                    transform: phase === 'failed' ? 'scale(1.02)' : 'scale(1)',
+                    transition: 'all 0.5s'
                 }}>
                     {phase === 'scanning' ? (
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
@@ -155,14 +154,24 @@ const TabletHighPrecision = ({ onRecoveryClick }) => {
                             </div>
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                            <div style={{ width: '3rem', height: '3rem', borderRadius: '0.75rem', background: 'rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                <span style={{ color: '#ef4444', fontSize: '1.875rem' }}>⚠️</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexDirection: 'column', textAlign: 'center' }}>
+                            {/* Expanded Failed UI */}
+                            <div style={{
+                                width: '4.5rem', height: '4.5rem', borderRadius: '50%',
+                                background: 'rgba(239, 68, 68, 0.1)', border: '2px solid rgba(239, 68, 68, 0.3)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                boxShadow: '0 0 20px rgba(239, 68, 68, 0.2)'
+                            }}>
+                                <span style={{ color: '#ef4444', fontSize: '2.5rem' }}>⚠️</span>
                             </div>
                             <div style={{ flex: 1 }}>
-                                <h3 style={{ color: '#ef4444', fontSize: '1.125rem', fontWeight: 'bold' }}>신호 감지 실패</h3>
-                                <p style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '500', marginTop: '0.125rem' }}>추적 대상의 신호가 잡히지 않습니다.</p>
-                                <p style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.25rem' }}>연결된 휴대폰 기반 추적만 지원됩니다.</p>
+                                <h3 style={{ color: '#ef4444', fontSize: '1.6rem', fontWeight: '800', marginBottom: '0.75rem', letterSpacing: ' -0.5px' }}>신호 감지 실패</h3>
+                                <p style={{ color: '#e2e8f0', fontSize: '1.1rem', fontWeight: '600', lineHeight: '1.6' }}>
+                                    추적 대상의 신호가 <br />전혀 잡히지 않습니다.
+                                </p>
+                                <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '0.75rem', background: 'rgba(0,0,0,0.3)', padding: '6px 12px', borderRadius: '8px', display: 'inline-block' }}>
+                                    연결된 휴대폰 기반 추적만 지원됩니다.
+                                </p>
                             </div>
                         </div>
                     )}
@@ -263,16 +272,6 @@ const TabletHighPrecision = ({ onRecoveryClick }) => {
                 @keyframes slideDown {
                     from { transform: translate(-50%, -100%); opacity: 0; }
                     to { transform: translate(-50%, 0); opacity: 1; }
-                }
-                @keyframes heartShake {
-                    0%, 100% { transform: translateX(0); }
-                    25% { transform: translateX(-3px) rotate(-5deg); }
-                    75% { transform: translateX(3px) rotate(5deg); }
-                }
-                @keyframes heartBreak {
-                    0% { transform: scale(1); opacity: 1; }
-                    50% { transform: scale(1.2); opacity: 0.8; }
-                    100% { transform: scale(0); opacity: 0; }
                 }
             `}</style>
         </div>
