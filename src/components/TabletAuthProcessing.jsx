@@ -6,34 +6,34 @@ const TabletAuthProcessing = ({ onComplete }) => {
     const [subText, setSubText] = useState('위성과 연결을 시도하고 있습니다');
 
     useEffect(() => {
-        // Progress animation
+        // Progress animation (faster)
         const progressInterval = setInterval(() => {
             setProgress(prev => {
                 if (prev >= 100) {
                     clearInterval(progressInterval);
                     return 100;
                 }
-                return prev + 2;
+                return prev + 4;
             });
-        }, 80);
+        }, 50);
 
-        // Status text changes
+        // Status text changes (faster)
         const timers = [
             setTimeout(() => {
                 setStatusText('위성 연결 중...');
                 setSubText('9개 위성 신호 감지');
-            }, 1500),
+            }, 800),
             setTimeout(() => {
                 setStatusText('위치 분석 중...');
                 setSubText('좌표 데이터를 처리하고 있습니다');
-            }, 3000),
+            }, 1500),
             setTimeout(() => {
                 setStatusText('인증 완료');
                 setSubText('추적 모드로 진입합니다');
-            }, 4500),
+            }, 2200),
             setTimeout(() => {
                 if (onComplete) onComplete();
-            }, 5500)
+            }, 3000)
         ];
 
         return () => {

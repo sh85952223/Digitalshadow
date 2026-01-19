@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import footprintLogo from '../assets/footprint_finder_logo.png';
 import TabletAuthProcessing from './TabletAuthProcessing';
+import TabletTraceMode from './TabletTraceMode';
+import TabletUpgrade from './TabletUpgrade';
 
 const TabletScreen = ({ onComplete, initialPhase }) => {
-    // Phases: off, booting, lockscreen, appLaunch, authIntro, authInput, authProcessing
+    // Phases: off, booting, lockscreen, appLaunch, authIntro, authInput, authProcessing, traceMode
     const [phase, setPhase] = useState('off');
 
     // Dev Tool Phase Switcher
@@ -420,7 +422,8 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
                         : phase === 'booting' ? '#000'
                             : phase === 'appLaunch' ? 'linear-gradient(135deg, #0d1b2a 0%, #1b263b 100%)'
                                 : phase === 'authProcessing' ? '#0a0c14'
-                                    : 'linear-gradient(180deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+                                    : phase === 'traceMode' ? '#101622'
+                                        : 'linear-gradient(180deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
                     borderRadius: '20px',
                     overflow: 'hidden',
                     position: 'relative',
@@ -1162,9 +1165,30 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
                     {/* P5: Auth Processing - GPS Tracking Loading */}
                     {phase === 'authProcessing' && (
                         <TabletAuthProcessing onComplete={() => {
-                            alert('P5 완료! P6 Trace Mode로 이동합니다. (추후 구현 예정)');
-                            // setPhase('traceMode'); // P6로 연결 (추후 구현)
+                            setPhase('traceMode');
                         }} />
+                    )}
+
+                    {/* P6: Trace Mode - Location Dashboard */}
+                    {phase === 'traceMode' && (
+                        <TabletTraceMode
+                            onUpgradeClick={() => {
+                                setPhase('upgrade');
+                            }}
+                            onExitClick={() => {
+                                alert('다시 생각해보기 선택. 홈 화면으로 이동합니다. (추후 구현 예정)');
+                            }}
+                        />
+                    )}
+
+                    {/* P7: Upgrade Screen */}
+                    {phase === 'upgrade' && (
+                        <TabletUpgrade
+                            onBackClick={() => setPhase('traceMode')}
+                            onPurchaseClick={() => {
+                                alert('결제 완료! 정확도 업그레이드가 적용됩니다. (추후 구현 예정)');
+                            }}
+                        />
                     )}
                 </div>
 
