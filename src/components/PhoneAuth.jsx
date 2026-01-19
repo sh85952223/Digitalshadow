@@ -16,6 +16,10 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
     const [appOpen, setAppOpen] = useState(false);
     const [appTab, setAppTab] = useState('main'); // main, log, prob, notice
     const [noticeOpen, setNoticeOpen] = useState(false);
+    const [mapOpen, setMapOpen] = useState(false); // Map App State
+
+    // Investigation State: 0:Init, 1:App, 2:NoticeRead, 3:MapUnlocked, 4:FoundPCBang, 5:Insight, 6:Done
+    const [investigationStep, setInvestigationStep] = useState(0);
 
     // Visual Cue State
     const [visitedTabs, setVisitedTabs] = useState({ log: false, prob: false, notice: false });
@@ -40,21 +44,24 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
 
     // Initial Dialogue Trigger
     useEffect(() => {
-        if (view === 'home' && !gachaUnlocked && !appOpen) {
+        if (view === 'home' && !gachaUnlocked && !appOpen && investigationStep === 0) {
             const timer = setTimeout(() => {
                 setDialogue({
                     show: true,
                     text: "저게 A가 하던 가챠 킹덤이라는 게임이군.",
-                    onComplete: () => setGachaUnlocked(true)
+                    onComplete: () => {
+                        setGachaUnlocked(true);
+                        setInvestigationStep(1);
+                    }
                 });
             }, 600);
             return () => clearTimeout(timer);
         }
-    }, [view, gachaUnlocked, appOpen]);
+    }, [view, gachaUnlocked, appOpen, investigationStep]);
 
     // App Open Dialogue Trigger
     useEffect(() => {
-        if (appOpen) {
+        if (appOpen && investigationStep === 1) {
             setAppTab('main');
             setNoticeOpen(false);
             const timer = setTimeout(() => {
@@ -66,7 +73,33 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
             }, 400);
             return () => clearTimeout(timer);
         }
-    }, [appOpen]);
+    }, [appOpen, investigationStep]);
+
+    // Step 2 Post-Notice Trigger
+    useEffect(() => {
+        if (investigationStep === 2 && noticeOpen) {
+            const timer = setTimeout(() => {
+                setDialogue({
+                    show: true,
+                    text: "사전 공지를 하긴 했지만... 당일에 공지하고 당일에 적용하다니. 사용자를 기만하는 운영방식에 가까워.",
+                    onComplete: () => {
+                        setTimeout(() => {
+                            setDialogue({
+                                show: true,
+                                text: "PC라도 가능하니 왠지 게임은 계속 접속해볼 것 같은데... PC방을 찾아봐야겠어.",
+                                onComplete: () => {
+                                    setNoticeOpen(false);
+                                    setAppOpen(false);
+                                    setInvestigationStep(3); // Map Unlocked
+                                }
+                            });
+                        }, 300);
+                    }
+                });
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [investigationStep, noticeOpen]);
 
     const handleKey_click = (val) => {
         if (passcode.length < 4) {
@@ -99,6 +132,34 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
     const handleDialogueClick = () => {
         if (dialogue.onComplete) dialogue.onComplete();
         setDialogue({ ...dialogue, show: false });
+    };
+
+    const playInsightSequence = () => {
+        const insights = [
+            "너의 잘못만은 아니야. 시스템이 그렇게 설계되어 있었을 뿐이지.",
+            "이건 '다크 패턴'이야. 사용자의 착각이나 실수를 유도해서 이익을 챙기는 기만적인 디자인이지.",
+            "하지만 그렇다고 해서 선택의 책임이 아예 없는 건 아니야. 이 함정을 꿰뚫어보는 눈을 가져야 해."
+        ];
+
+        let currentIdx = 0;
+
+        const showNext = () => {
+            if (currentIdx < insights.length) {
+                setDialogue({
+                    show: true,
+                    text: insights[currentIdx],
+                    onComplete: () => {
+                        currentIdx++;
+                        setTimeout(showNext, 300);
+                    }
+                });
+            } else {
+                // Handover
+                if (onComplete) onComplete();
+            }
+        };
+
+        showNext();
     };
 
     // --- SUB-COMPONENTS ---
@@ -299,10 +360,36 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                             borderRadius: '35px', padding: '16px 20px',
                             display: 'flex', justifyContent: 'space-around', alignItems: 'center'
                         }}>
-                            <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: '#34c759', display: 'grid', placeItems: 'center', fontSize: '28px', color: '#fff' }}>📞</div>
-                            <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: '#007aff', display: 'grid', placeItems: 'center', fontSize: '28px', color: '#fff' }}>💬</div>
-                            <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: 'linear-gradient(135deg, #ff9500, #ff3b30)', display: 'grid', placeItems: 'center', fontSize: '28px', color: '#fff' }}>♫</div>
-                            <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: '#e5e5ea', display: 'grid', placeItems: 'center', fontSize: '28px', color: '#000' }}>🧭</div>
+                            <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: '#34c759', display: 'grid', placeItems: 'center', fontSize: '28px', color: '#fff', opacity: 0.6 }}>📞</div>
+                            <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: '#007aff', display: 'grid', placeItems: 'center', fontSize: '28px', color: '#fff', opacity: 0.6 }}>💬</div>
+                            <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: 'linear-gradient(135deg, #ff9500, #ff3b30)', display: 'grid', placeItems: 'center', fontSize: '28px', color: '#fff', opacity: 0.6 }}>♫</div>
+
+                            {/* COMPASS / MAP ICON */}
+                            <div
+                                onClick={() => {
+                                    if (investigationStep >= 3) {
+                                        setMapOpen(true);
+                                    }
+                                }}
+                                className={investigationStep === 3 ? 'guide-pulse' : ''}
+                                style={{
+                                    width: '54px', height: '54px', borderRadius: '14px', background: '#e5e5ea',
+                                    display: 'grid', placeItems: 'center', fontSize: '28px', color: '#000',
+                                    opacity: investigationStep >= 3 ? 1 : 0.6,
+                                    cursor: investigationStep >= 3 ? 'pointer' : 'default',
+                                    position: 'relative',
+                                    transition: 'opacity 0.3s'
+                                }}
+                            >
+                                🧭
+                                {investigationStep === 3 && (
+                                    <div style={{
+                                        position: 'absolute', top: -5, right: -5, width: '12px', height: '12px',
+                                        borderRadius: '50%', background: '#ff3b30', border: '2px solid #fff',
+                                        zIndex: 10
+                                    }}></div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -428,6 +515,7 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                                                         if (n.highlight) {
                                                             setNoticeOpen(true);
                                                             setNoticeRead(true);
+                                                            if (investigationStep < 2) setInvestigationStep(2);
                                                         }
                                                     }}
                                                     className={n.highlight && !noticeRead ? 'guide-pulse' : ''}
@@ -476,7 +564,7 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                             {[
                                 { id: 'main', icon: '🏠', l: "홈", msg: "메인 화면은 화려한 성공담뿐이야. 실패할 거란 생각은 들지 않게 설계되었군." },
                                 { id: 'log', icon: '📝', l: "기록", msg: "8월 17일부터 실패가 계속되었어. 일기장에 적힌 '이상하다'는 시점과 일치해.", highlight: true },
-                                { id: 'prob', icon: '📊', l: "확률", msg: "10%라... 하얀이는 분명 40%로 알고 있었지. 사용자에게 개인적인 알림은 없이 수치를 바꾼 거야.", highlight: true },
+                                { id: 'prob', icon: '📊', l: "확률", msg: "10%라... 하얀이는 분명 40%로 알고 있었지. 아무런 알림 없이 수치를 바꾼 거야.", highlight: true },
                                 { id: 'notice', icon: '🔔', l: "공지", msg: "수많은 이벤트 공지 사이에 '확률 조정'을 숨겨놨어. 사용자가 일부러 못 보게 하려는 의도야.", highlight: true }
                             ].map(item => (
                                 <div key={item.id}
@@ -506,45 +594,97 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                         </div>
                     </div>
                 )}
-            </div>
 
-            {/* --- DIALOGUE OVERLAY (EXACT AROOM THEME) --- */}
-            {dialogue.show && createPortal(
-                <div
-                    onClick={handleDialogueClick}
-                    style={{
-                        position: 'fixed', bottom: '10%', left: '50%', transform: 'translateX(-50%)',
-                        width: '70%', maxWidth: '1000px', minHeight: '250px',
-                        background: purpleTheme.bg,
-                        border: `1px solid ${purpleTheme.border}`,
-                        boxShadow: `0 0 30px ${purpleTheme.glow}`,
-                        backdropFilter: 'blur(16px)',
-                        clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)',
-                        zIndex: 50000, cursor: 'pointer', display: 'flex', flexDirection: 'column',
-                        padding: '0',
-                        fontFamily: '"Pretendard Variable", Pretendard, sans-serif'
-                    }}
-                >
-                    <div style={{ width: '100%', height: '35px', background: `linear-gradient(90deg, rgba(191, 90, 242, 0.15) 0%, transparent 100%)`, borderBottom: `1px solid ${purpleTheme.border}`, display: 'flex', alignItems: 'center', paddingLeft: '40px' }}>
-                        <div style={{ width: '8px', height: '8px', background: purpleTheme.primary, marginRight: '15px', borderRadius: '50%', boxShadow: `0 0 8px ${purpleTheme.primary}` }}></div>
-                        <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: purpleTheme.primary, letterSpacing: '2px', fontWeight: 'bold' }}>DIGITAL INVESTIGATION // PHONE_LOG</span>
-                    </div>
-                    <div style={{ padding: '2.5rem 3rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <div style={{ display: 'inline-block', background: 'rgba(191, 90, 242, 0.15)', padding: '0.4rem 1.5rem', borderLeft: `4px solid ${purpleTheme.primary}`, marginBottom: '1rem', width: 'fit-content' }}>
-                            <span style={{ color: '#fff', fontSize: '1.4rem', fontWeight: '800', letterSpacing: '0.05em' }}>나</span>
+                {/* --- MAP APP OVERLAY --- */}
+                {mapOpen && (
+                    <div style={{
+                        position: 'absolute', inset: 0, zIndex: 60,
+                        backgroundColor: '#1c1c1e',
+                        display: 'flex', flexDirection: 'column',
+                        animation: 'appLaunch 0.3s cubic-bezier(0.19, 1, 0.22, 1)'
+                    }}>
+                        {/* Map Header */}
+                        <div style={{ width: '100%', height: '50px', display: 'flex', alignItems: 'center', padding: '0 20px', justifyContent: 'space-between', zIndex: 10, background: 'rgba(28,28,30,0.8)', backdropFilter: 'blur(10px)' }}>
+                            <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#333', display: 'grid', placeItems: 'center', cursor: 'pointer' }}
+                                onClick={() => setMapOpen(false)}
+                            >✕</div>
+                            <div style={{ fontWeight: 'bold', color: '#fff' }}>Map</div>
+                            <div style={{ width: '30px' }}></div>
                         </div>
-                        <p style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '1.6rem', lineHeight: '1.6', margin: 0, fontWeight: '400', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
-                            {dialogue.text}
-                        </p>
-                    </div>
-                    <div style={{ position: 'absolute', bottom: '20px', right: '30px', color: purpleTheme.primary, fontSize: '1.2rem', fontWeight: 'bold', animation: 'bounce 1s infinite', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        NEXT <span style={{ fontSize: '1.0rem' }}>▼</span>
-                    </div>
-                </div>,
-                document.body
-            )}
 
-            <style>{`
+                        {/* Map Content (Mock) */}
+                        <div style={{ flex: 1, position: 'relative', background: '#2c2c2e', overflow: 'hidden' }}>
+                            {/* Map Grid/Context */}
+                            <div style={{ position: 'absolute', inset: 0, opacity: 0.2, backgroundImage: 'radial-gradient(#555 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+
+                            {/* Pin */}
+                            <div
+                                onClick={() => {
+                                    setDialogue({
+                                        show: true,
+                                        text: "여기군. 자주 가던 'S-Planet' PC방. 여기서 마지막으로 접속했을 거야.",
+                                        onComplete: () => {
+                                            setMapOpen(false); // Close map
+                                            setInvestigationStep(5); // Insight Phase
+                                            playInsightSequence();
+                                        }
+                                    });
+                                }}
+                                style={{
+                                    position: 'absolute', top: '40%', left: '60%',
+                                    width: '40px', height: '40px', transform: 'translate(-50%, -50%)',
+                                    cursor: 'pointer', zIndex: 20
+                                }}
+                                className="guide-pulse"
+                            >
+                                <div style={{ fontSize: '30px' }}>📍</div>
+                                <div style={{
+                                    position: 'absolute', top: '35px', left: '50%', transform: 'translateX(-50%)',
+                                    whiteSpace: 'nowrap', background: '#000', padding: '2px 6px', borderRadius: '4px',
+                                    fontSize: '10px', color: '#fff'
+                                }}>S-Planet PC</div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* --- DIALOGUE OVERLAY (EXACT AROOM THEME) --- */}
+                {dialogue.show && createPortal(
+                    <div
+                        onClick={handleDialogueClick}
+                        style={{
+                            position: 'fixed', bottom: '10%', left: '50%', transform: 'translateX(-50%)',
+                            width: '70%', maxWidth: '1000px', minHeight: '250px',
+                            background: purpleTheme.bg,
+                            border: `1px solid ${purpleTheme.border}`,
+                            boxShadow: `0 0 30px ${purpleTheme.glow}`,
+                            backdropFilter: 'blur(16px)',
+                            clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)',
+                            zIndex: 50000, cursor: 'pointer', display: 'flex', flexDirection: 'column',
+                            padding: '0',
+                            fontFamily: '"Pretendard Variable", Pretendard, sans-serif'
+                        }}
+                    >
+                        <div style={{ width: '100%', height: '35px', background: `linear-gradient(90deg, rgba(191, 90, 242, 0.15) 0%, transparent 100%)`, borderBottom: `1px solid ${purpleTheme.border}`, display: 'flex', alignItems: 'center', paddingLeft: '40px' }}>
+                            <div style={{ width: '8px', height: '8px', background: purpleTheme.primary, marginRight: '15px', borderRadius: '50%', boxShadow: `0 0 8px ${purpleTheme.primary}` }}></div>
+                            <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: purpleTheme.primary, letterSpacing: '2px', fontWeight: 'bold' }}>DIGITAL INVESTIGATION // {investigationStep >= 5 ? 'INSIGHT_REPORT' : 'PHONE_LOG'}</span>
+                        </div>
+                        <div style={{ padding: '2.5rem 3rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            <div style={{ display: 'inline-block', background: 'rgba(191, 90, 242, 0.15)', padding: '0.4rem 1.5rem', borderLeft: `4px solid ${purpleTheme.primary}`, marginBottom: '1rem', width: 'fit-content' }}>
+                                <span style={{ color: '#fff', fontSize: '1.4rem', fontWeight: '800', letterSpacing: '0.05em' }}>{investigationStep >= 5 ? '수사관' : '나'}</span>
+                            </div>
+                            <p style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '1.6rem', lineHeight: '1.6', margin: 0, fontWeight: '400', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                                {dialogue.text}
+                            </p>
+                        </div>
+                        <div style={{ position: 'absolute', bottom: '20px', right: '30px', color: purpleTheme.primary, fontSize: '1.2rem', fontWeight: 'bold', animation: 'bounce 1s infinite', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            NEXT <span style={{ fontSize: '1.0rem' }}>▼</span>
+                        </div>
+                    </div>,
+                    document.body
+                )}
+
+                <style>{`
                     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                     @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
                     @keyframes appLaunch { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -558,6 +698,7 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                     .guide-pulse { animation: navPulse 2s infinite; }
                     @keyframes navPulse { 0% { opacity: 0.4; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 5px #BF5AF2); } 100% { opacity: 0.4; transform: scale(1); } }
                 `}</style>
+            </div>
         </div>
     );
 };
