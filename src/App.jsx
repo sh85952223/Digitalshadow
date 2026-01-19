@@ -4,6 +4,7 @@ import InvestigationHQ from './components/InvestigationHQ';
 import ARoom from './components/ARoom';
 import ARoomRecovered from './components/ARoomRecovered';
 import PhoneAuth from './components/PhoneAuth';
+import InvestigationInsight from './components/InvestigationInsight';
 import TabletScreen from './components/TabletScreen';
 import './styles/FlashlightEffect.css'; // For global cursor styling
 
@@ -31,6 +32,7 @@ function App() {
     { key: 'room_recovered', label: 'A\'s Room (Recovered)' },
     { key: 'room_recovered_phone', label: 'A\'s Room (Phone Auth)' },
     { key: 'room_recovered_map', label: 'A\'s Room (Map/Conclusion)' },
+    { key: 'insight', label: 'PC Bang (Insight)' },
     // Tablet Expanded Options
     { key: 'tablet-off', label: '📱 Tablet (OFF)', type: 'tablet', phase: 'off' },
     { key: 'tablet-p1', label: '📱 Tablet (P1: Noti)', type: 'tablet', phase: 'p1' },
@@ -156,7 +158,8 @@ function App() {
       {/* Stage-based Rendering */}
       {stage === 'intro' && <IntroPage onComplete={() => setStage('hq')} />}
       {stage === 'hq' && <InvestigationHQ onComplete={() => setStage('room')} />}
-      {stage === 'hq_report' && <InvestigationHQ isReport={true} onComplete={() => setStage('tablet')} />}
+      {stage === 'hq_report' && <InvestigationHQ isReport={true} onComplete={() => setStage('insight')} />}
+      {stage === 'insight' && <InvestigationInsight onComplete={() => setStage('intro')} />}
       {stage === 'room' && <ARoom onComplete={() => setStage('tablet')} />}
       {stage === 'room_recovered' && <ARoomRecovered onComplete={() => setStage('hq_report')} />}
       {stage === 'room_recovered_phone' && <ARoomRecovered initialPhoneOpen={true} onComplete={() => setStage('hq_report')} />}

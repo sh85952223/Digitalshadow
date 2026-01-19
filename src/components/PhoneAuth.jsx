@@ -625,16 +625,14 @@ const PhoneAuth = ({ onComplete, onReturnToMirror, initialStep = 0 }) => {
                             }}></div>
                             <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.3)' }}></div>
 
-                            {/* Pin */}
+                            {/* Pin - Triggers HQ Return */}
                             <div
                                 onClick={() => {
                                     setDialogue({
                                         show: true,
-                                        text: "여기군. 자주 가던 'S-Planet' PC방. 여기서 마지막으로 접속했을 거야.",
+                                        text: "찾았다! S-Planet PC방. 자주 가던 곳이야. 당장 수사 본부로 복귀해서 보고해야겠어.",
                                         onComplete: () => {
-                                            setMapOpen(false); // Close map
-                                            setInvestigationStep(5); // Insight Phase
-                                            playInsightSequence();
+                                            if (onComplete) onComplete();
                                         }
                                     });
                                 }}

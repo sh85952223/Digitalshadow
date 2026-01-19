@@ -26,7 +26,7 @@ const InvestigationHQ = ({ onComplete, isReport = false }) => { // isReport prop
     const reportDialogues = [
         "수고했네. S-Planet PC방이라... 역시 다크 패턴을 이용한 함정이었군.",
         "자네가 확보한 증거로 해당 게임사의 기만 행위를 입증할 수 있겠어.",
-        "이제 자네가 찾아낸 PC방으로 이동해서 직접 서버에 접속해보게."
+        "이제 자네가 찾아낸 PC방으로 이동해서 하얀 학생을 찾아서 부모님께 데려다주게."
     ];
 
     const currentDialogues = step >= 10 ? reportDialogues : introDialogues;
