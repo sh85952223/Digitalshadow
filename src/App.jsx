@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import IntroPage from './components/IntroPage';
 import InvestigationHQ from './components/InvestigationHQ';
 import ARoom from './components/ARoom';
+import ARoomRecovered from './components/ARoomRecovered';
 import TabletScreen from './components/TabletScreen';
 import './styles/FlashlightEffect.css'; // For global cursor styling
 
@@ -16,6 +17,7 @@ function App() {
     { key: 'intro', label: 'Intro' },
     { key: 'hq', label: 'HQ' },
     { key: 'room', label: 'A\'s Room' },
+    { key: 'room_recovered', label: 'A\'s Room (Recovered)' },
     // Tablet Expanded Options
     { key: 'tablet-off', label: '📱 Tablet (OFF)', type: 'tablet', phase: 'off' },
     { key: 'tablet-p1', label: '📱 Tablet (P1: Noti)', type: 'tablet', phase: 'p1' },
@@ -142,7 +144,12 @@ function App() {
       {stage === 'intro' && <IntroPage onComplete={() => setStage('hq')} />}
       {stage === 'hq' && <InvestigationHQ onComplete={() => setStage('room')} />}
       {stage === 'room' && <ARoom onComplete={() => setStage('tablet')} />}
-      {stage === 'tablet' && <TabletScreen onComplete={() => setStage('hq')} initialPhase={tabletPhase} />}
+      {stage === 'room_recovered' && <ARoomRecovered onComplete={() => { }} />}
+      {stage === 'tablet' && <TabletScreen
+        onComplete={() => setStage('hq')}
+        initialPhase={tabletPhase}
+        onReturnToRoom={() => setStage('room_recovered')}
+      />}
     </div>
   );
 }

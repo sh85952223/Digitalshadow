@@ -7,9 +7,10 @@ import TabletHighPrecision from './TabletHighPrecision';
 import TabletRecoveryMission from './TabletRecoveryMission';
 import TabletHome from './TabletHome';
 
-const TabletScreen = ({ onComplete, initialPhase }) => {
+const TabletScreen = ({ onComplete, initialPhase, onReturnToRoom }) => {
     // Phases: off, booting, lockscreen, appLaunch, authIntro, authInput, authProcessing, traceMode
     const [phase, setPhase] = useState('off');
+    const [tabletHomeInitialApp, setTabletHomeInitialApp] = useState(null);
 
     // Dev Tool Phase Switcher
     useEffect(() => {
@@ -1224,7 +1225,9 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
                                 setPhase('upgrade');
                             }}
                             onExitClick={() => {
-                                alert('다시 생각해보기 선택. 홈 화면으로 이동합니다. (추후 구현 예정)');
+                                // Logic 1: Reconsider -> Home -> Notes
+                                setPhase('homeScreen');
+                                setTabletHomeInitialApp('notes');
                             }}
                         />
                     )}
@@ -1235,7 +1238,9 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
                             onBackClick={() => setPhase('traceMode')}
                             onPurchaseClick={(action) => {
                                 if (action === 'exit') {
-                                    alert('앱이 종료되었습니다. (수사 계속 진행)');
+                                    // Logic 2: Exit App -> Home -> Notes
+                                    setPhase('homeScreen');
+                                    setTabletHomeInitialApp('notes');
                                 } else if (action === 'purchase') {
                                     setPhase('highPrecision');
                                 }
@@ -1253,7 +1258,10 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
 
                     {/* P17: Tablet Home - iOS Style */}
                     {phase === 'homeScreen' && (
-                        <TabletHome />
+                        <TabletHome
+                            onReturnToRoom={onReturnToRoom}
+                            initialApp={tabletHomeInitialApp}
+                        />
                     )}
 
                     {phase === 'recoveryMission' && (

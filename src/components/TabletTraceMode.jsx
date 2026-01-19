@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 const TabletTraceMode = ({ onUpgradeClick, onExitClick }) => {
     const [currentTime, setCurrentTime] = useState('');
@@ -8,6 +9,7 @@ const TabletTraceMode = ({ onUpgradeClick, onExitClick }) => {
     const [dialogueQueue, setDialogueQueue] = useState([]);
     const [dateHighlighted, setDateHighlighted] = useState(false);
     const [showUpgradeCard, setShowUpgradeCard] = useState(false);
+    const [showAchievement, setShowAchievement] = useState(false);
 
     useEffect(() => {
         const updateTime = () => {
@@ -56,6 +58,8 @@ const TabletTraceMode = ({ onUpgradeClick, onExitClick }) => {
             if (stage === 'dateClicked') {
                 setStage('decision');
                 setShowUpgradeCard(true);
+            } else if (stage === 'reconsider') {
+                setShowAchievement(true);
             }
         }
     };
@@ -65,6 +69,19 @@ const TabletTraceMode = ({ onUpgradeClick, onExitClick }) => {
     };
 
     const handleExit = () => {
+        // Logic 1: Reconsider
+        setStage('reconsider');
+        setShowUpgradeCard(false); // Hide the card
+
+        setDialogueText('맞아! 사실 정확도가 중요한게 아니야. A의 휴대폰은 방에 있었어...');
+        setDialogueQueue([
+            '앱의 UI에 이끌려 유료 앱을 결제할 뻔했어. 다행이야.'
+        ]);
+        setShowDialogue(true);
+    };
+
+    const handleAchievementClose = () => {
+        setShowAchievement(false);
         if (onExitClick) onExitClick();
     };
 
@@ -611,7 +628,85 @@ const TabletTraceMode = ({ onUpgradeClick, onExitClick }) => {
                     50% { opacity: 0.3; }
                 }
             `}</style>
-        </div>
+
+            {/* Achievement Modal - Portal */}
+            {
+                showAchievement && createPortal(
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                        background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
+                        zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center',
+                        animation: 'fadeIn 0.3s'
+                    }} onClick={handleAchievementClose}>
+                        <div style={{
+                            width: '90%', maxWidth: '400px',
+                            background: 'rgba(10, 20, 40, 0.95)',
+                            border: '1px solid rgba(191, 90, 242, 0.5)', // Using purple theme
+                            borderRadius: '16px',
+                            boxShadow: '0 0 50px rgba(191, 90, 242, 0.3)',
+                            padding: '2rem',
+                            textAlign: 'center',
+                            position: 'relative',
+                            transform: 'scale(1)',
+                            animation: 'heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                        }} onClick={(e) => e.stopPropagation()}>
+
+                            <div style={{
+                                width: '60px', height: '60px', margin: '0 auto 1.5rem',
+                                border: '2px solid #BF5AF2', borderRadius: '50%',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                boxShadow: '0 0 20px rgba(191, 90, 242, 0.4)'
+                            }}>
+                                <span style={{ fontSize: '30px', color: '#BF5AF2' }}>🔍</span>
+                            </div>
+
+                            <h2 style={{
+                                color: '#BF5AF2', fontSize: '1.8rem', fontWeight: 'bold',
+                                letterSpacing: '0.05em', marginBottom: '0.5rem',
+                                textShadow: '0 0 10px rgba(191, 90, 242, 0.5)'
+                            }}>
+                                DARK PATTERN DETECTED
+                            </h2>
+
+                            <div style={{
+                                width: '100%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(191, 90, 242, 0.5), transparent)',
+                                margin: '1.2rem 0'
+                            }}></div>
+
+                            <p style={{ color: '#e0f2fe', fontSize: '1.2rem', lineHeight: '1.6', marginBottom: '2rem' }}>
+                                <strong style={{ color: '#BF5AF2' }}>'Misdirection (유도된 선택)'</strong><br />
+                                유형을 찾아냈습니다.
+                            </p>
+
+                            <button
+                                onClick={handleAchievementClose}
+                                style={{
+                                    background: 'rgba(191, 90, 242, 0.15)',
+                                    color: '#BF5AF2',
+                                    border: '1px solid rgba(191, 90, 242, 0.5)',
+                                    padding: '12px 30px',
+                                    borderRadius: '8px',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseOver={(e) => {
+                                    e.target.style.background = 'rgba(191, 90, 242, 0.3)';
+                                    e.target.style.boxShadow = '0 0 15px rgba(191, 90, 242, 0.4)';
+                                }}
+                                onMouseOut={(e) => {
+                                    e.target.style.background = 'rgba(191, 90, 242, 0.15)';
+                                    e.target.style.boxShadow = 'none';
+                                }}
+                            >
+                                확인
+                            </button>
+                        </div>
+                    </div>,
+                    document.body
+                )
+            }
+        </div >
     );
 };
 

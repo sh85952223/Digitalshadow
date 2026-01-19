@@ -2,15 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import characterImage from '../assets/instructor.png';
 
-const TabletHome = ({ onOpenApp }) => {
+const TabletHome = ({ onOpenApp, onReturnToRoom, initialApp }) => {
     const [showInstructor, setShowInstructor] = useState(false);
     const [openApp, setOpenApp] = useState(null); // 'notes' or null
+    const [showReturnDialogue, setShowReturnDialogue] = useState(false);
+
+    const yellowTheme = {
+        primary: '#fbbf24',
+        bg: 'rgba(20, 15, 5, 0.9)',
+        border: 'rgba(251, 191, 36, 0.5)',
+        glow: 'rgba(251, 191, 36, 0.3)'
+    };
 
     useEffect(() => {
-        // Show instructor after a brief delay
-        const timer = setTimeout(() => setShowInstructor(true), 1000);
-        return () => clearTimeout(timer);
-    }, []);
+        if (initialApp) {
+            setOpenApp(initialApp);
+        }
+        // Show instructor after a brief delay only if no initial app
+        if (!initialApp) {
+            const timer = setTimeout(() => setShowInstructor(true), 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [initialApp]);
 
     const handleAppClick = (appName) => {
         if (appName === 'Notes') {
@@ -20,6 +33,11 @@ const TabletHome = ({ onOpenApp }) => {
 
     const handleCloseApp = () => {
         setOpenApp(null);
+    };
+
+    const handleReturnHome = () => {
+        setOpenApp(null);
+        setTimeout(() => setShowReturnDialogue(true), 500);
     };
 
     return (
@@ -92,7 +110,7 @@ const TabletHome = ({ onOpenApp }) => {
             </div>
 
             {/* Instructor Dialogue Overlay (Portal) */}
-            {showInstructor && !openApp && createPortal(
+            {showInstructor && !openApp && !showReturnDialogue && createPortal(
                 <div style={{
                     position: 'fixed', inset: 0,
                     zIndex: 9999, // Highest priority
@@ -160,6 +178,34 @@ const TabletHome = ({ onOpenApp }) => {
                 document.body
             )}
 
+            {/* Return to Home Dialogue (Yellow Theme) */}
+            {showReturnDialogue && createPortal(
+                <div onClick={onReturnToRoom} style={{
+                    position: 'fixed', bottom: '10%', left: '50%', transform: 'translateX(-50%)',
+                    width: '70%', maxWidth: '1000px', minHeight: '200px', background: yellowTheme.bg,
+                    border: `1px solid ${yellowTheme.border}`, boxShadow: `0 0 30px ${yellowTheme.glow}`,
+                    backdropFilter: 'blur(16px)', clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)',
+                    zIndex: 10003, cursor: 'pointer', display: 'flex', flexDirection: 'column', padding: '0'
+                }}>
+                    <div style={{ width: '100%', height: '35px', background: `linear-gradient(90deg, rgba(251, 191, 36, 0.15) 0%, transparent 100%)`, borderBottom: `1px solid ${yellowTheme.border}`, display: 'flex', alignItems: 'center', paddingLeft: '40px' }}>
+                        <div style={{ width: '8px', height: '8px', background: yellowTheme.primary, marginRight: '15px', borderRadius: '50%', boxShadow: `0 0 8px ${yellowTheme.primary}` }}></div>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: yellowTheme.primary, letterSpacing: '2px', fontWeight: 'bold' }}>PERSONAL LOG // RECOVERY</span>
+                    </div>
+                    <div style={{ padding: '2rem 3rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <div style={{ display: 'inline-block', background: 'rgba(251, 191, 36, 0.15)', padding: '0.4rem 1.5rem', borderLeft: `4px solid ${yellowTheme.primary}`, marginBottom: '1.2rem', width: 'fit-content' }}>
+                            <span style={{ color: '#fff', fontSize: '1.4rem', fontWeight: '800', letterSpacing: '0.05em' }}>나</span>
+                        </div>
+                        <p style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '1.6rem', lineHeight: '1.6', margin: 0, fontWeight: '400', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                            다시 A의 방으로 돌아가자. A가 어딘가에 휴대폰 암호에 대한 힌트를 숨겨놓은거야.
+                        </p>
+                    </div>
+                    <div style={{ position: 'absolute', bottom: '20px', right: '30px', color: yellowTheme.primary, fontSize: '1.2rem', fontWeight: 'bold', animation: 'bounce 1s infinite', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        RETURN TO ROOM <span style={{ fontSize: '1.0rem' }}>▼</span>
+                    </div>
+                </div>,
+                document.body
+            )}
+
             {/* Notes App Modal - Dark Mode iOS Style */}
             {openApp === 'notes' && (
                 <div style={{
@@ -214,7 +260,7 @@ const TabletHome = ({ onOpenApp }) => {
                         {/* Home Button */}
                         <div style={{ marginTop: 'auto', paddingTop: '40px', paddingBottom: '40px', display: 'flex', justifyContent: 'center' }}>
                             <button
-                                onClick={handleCloseApp}
+                                onClick={handleReturnHome}
                                 style={{
                                     background: '#333', color: '#fbbf24', border: '1px solid #fbbf24',
                                     padding: '12px 30px', borderRadius: '25px', fontSize: '1rem',
