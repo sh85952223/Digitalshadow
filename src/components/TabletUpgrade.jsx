@@ -4,8 +4,9 @@ import { createPortal } from 'react-dom';
 const TabletUpgrade = ({ onBackClick, onPurchaseClick }) => {
     const [isChecked, setIsChecked] = useState(true);
     const [showToast, setShowToast] = useState(false);
-    const [monologuePhase, setMonologuePhase] = useState('none'); // none, active, complete
+    const [monologuePhase, setMonologuePhase] = useState('none'); // none, active, complete, achievement_pending
     const [monologueIndex, setMonologueIndex] = useState(0);
+    const [showAchievement, setShowAchievement] = useState(false);
 
     // "Flashy" Benefit Cards Data
     const benefits = [
@@ -42,8 +43,15 @@ const TabletUpgrade = ({ onBackClick, onPurchaseClick }) => {
         if (monologueIndex < monologueLines.length - 1) {
             setMonologueIndex(prev => prev + 1);
         } else {
-            setMonologuePhase('complete'); // End of monologue
+            // End of monologue -> Show Achievement
+            setMonologuePhase('achievement_pending');
+            setShowAchievement(true);
         }
+    };
+
+    const handleAchievementClose = () => {
+        setShowAchievement(false);
+        setMonologuePhase('complete');
     };
 
     const handleMainLessButtonClick = () => {
@@ -197,17 +205,6 @@ const TabletUpgrade = ({ onBackClick, onPurchaseClick }) => {
                         </button>
                     ) : (
                         <>
-                            <div style={{
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                padding: '1.2rem', borderRadius: '1.2rem',
-                                border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(255, 255, 255, 0.03)'
-                            }}>
-                                <span style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.4rem' }}>일회성 정밀 분석 비용</span>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem' }}>
-                                    <span style={{ fontSize: '1.8rem', fontWeight: '800', color: '#fff', letterSpacing: '-0.02em' }}>1,100원</span>
-                                    <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>/ 회</span>
-                                </div>
-                            </div>
                             <button
                                 onClick={handleMainLessButtonClick}
                                 style={{
@@ -222,7 +219,7 @@ const TabletUpgrade = ({ onBackClick, onPurchaseClick }) => {
                                     filter: isChecked ? 'none' : 'grayscale(1)'
                                 }}
                             >
-                                지금 확인하기
+                                정밀 위치 탐색하기
                             </button>
                         </>
                     )}
@@ -321,6 +318,82 @@ const TabletUpgrade = ({ onBackClick, onPurchaseClick }) => {
                     </div>
                     <div style={{ position: 'absolute', bottom: '20px', right: '30px', color: '#BF5AF2', fontSize: '1.2rem', fontWeight: 'bold', animation: 'bounce 1s infinite', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {monologueIndex < monologueLines.length - 1 ? 'NEXT' : 'DECIDE'} <span style={{ fontSize: '1.0rem' }}>▼</span>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Achievement Modal - Portal */}
+            {showAchievement && createPortal(
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
+                    zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center',
+                    animation: 'fadeIn 0.3s'
+                }} onClick={handleAchievementClose}>
+                    <div style={{
+                        width: '90%', maxWidth: '400px',
+                        background: 'rgba(10, 20, 40, 0.95)',
+                        border: '1px solid rgba(0, 255, 255, 0.3)',
+                        borderRadius: '16px',
+                        boxShadow: '0 0 50px rgba(0, 255, 255, 0.2)',
+                        padding: '2rem',
+                        textAlign: 'center',
+                        position: 'relative',
+                        transform: 'scale(1)',
+                        animation: 'heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                    }} onClick={(e) => e.stopPropagation()}>
+
+                        <div style={{
+                            width: '60px', height: '60px', margin: '0 auto 1.5rem',
+                            border: '2px solid #00ffff', borderRadius: '50%',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            boxShadow: '0 0 20px rgba(0,255,255,0.4)'
+                        }}>
+                            <span style={{ fontSize: '30px', color: '#00ffff' }}>🔍</span>
+                        </div>
+
+                        <h2 style={{
+                            color: '#00ffff', fontSize: '1.5rem', fontWeight: 'bold',
+                            letterSpacing: '0.05em', marginBottom: '0.5rem',
+                            textShadow: '0 0 10px rgba(0,255,255,0.5)'
+                        }}>
+                            DARK PATTERN DETECTED
+                        </h2>
+
+                        <div style={{
+                            width: '100%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(0,255,255,0.5), transparent)',
+                            margin: '1rem 0'
+                        }}></div>
+
+                        <p style={{ color: '#e0f2fe', fontSize: '1rem', lineHeight: '1.6', marginBottom: '2rem' }}>
+                            <strong style={{ color: '#38bdf8' }}>'Hidden Subscription(숨겨진 구독)'</strong><br />
+                            유형을 찾아냈습니다.
+                        </p>
+
+                        <button
+                            onClick={handleAchievementClose}
+                            style={{
+                                background: 'rgba(0, 255, 255, 0.15)',
+                                color: '#00ffff',
+                                border: '1px solid rgba(0, 255, 255, 0.5)',
+                                padding: '12px 30px',
+                                borderRadius: '8px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseOver={(e) => {
+                                e.target.style.background = 'rgba(0, 255, 255, 0.3)';
+                                e.target.style.boxShadow = '0 0 15px rgba(0,255,255,0.4)';
+                            }}
+                            onMouseOut={(e) => {
+                                e.target.style.background = 'rgba(0, 255, 255, 0.15)';
+                                e.target.style.boxShadow = 'none';
+                            }}
+                        >
+                            확인
+                        </button>
                     </div>
                 </div>,
                 document.body
