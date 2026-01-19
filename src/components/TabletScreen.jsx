@@ -1,9 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
 import footprintLogo from '../assets/footprint_finder_logo.png';
 
-const TabletScreen = ({ onComplete }) => {
-    // Phases: off, booting, lockscreen, appLaunch, authIntro
+const TabletScreen = ({ onComplete, initialPhase }) => {
+    // Phases: off, booting, lockscreen, appLaunch, authIntro, authInput
     const [phase, setPhase] = useState('off');
+
+    // Dev Tool Phase Switcher
+    useEffect(() => {
+        if (!initialPhase) return;
+
+        // Reset states
+        setShowNotification(false);
+        setDialogueText('');
+        setShowDialogue(false);
+        setShowGuiltModal(false);
+
+        if (initialPhase === 'p1') {
+            setPhase('lockscreen');
+            setTimeout(() => setShowNotification(true), 500);
+        } else if (initialPhase === 'p2') {
+            setPhase('appLaunch');
+        } else if (initialPhase === 'p3') {
+            setPhase('authIntro');
+        } else if (initialPhase === 'p4') {
+            setPhase('authInput');
+        } else {
+            setPhase(initialPhase); // 'off', 'booting', etc.
+        }
+    }, [initialPhase]);
     const [showNotification, setShowNotification] = useState(false);
     const [currentTime, setCurrentTime] = useState('');
     const [hearts, setHearts] = useState(3);
@@ -14,6 +38,8 @@ const TabletScreen = ({ onComplete }) => {
     const [showDialogue, setShowDialogue] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0); // For P2 loading bar
     const [showGuiltModal, setShowGuiltModal] = useState(false); // P3 Dark Pattern Modal
+    const [dialogueQueue, setDialogueQueue] = useState([]); // Queue for multi-step dialogues
+    const [showHintModal, setShowHintModal] = useState(false); // Authentication Hint Modal
 
     // P4 Inputs
     const [inputName, setInputName] = useState('');
@@ -80,7 +106,7 @@ const TabletScreen = ({ onComplete }) => {
                 setNotificationY(0);
                 // Show dialogue 0.7s after notification
                 setTimeout(() => {
-                    setDialogueText("A의 위치를 알아내는게 주요 임무인데....어떻게 할까? 들어갈볼까? 태블릿부터 살펴야하나?");
+                    setDialogueText("A의 위치를 알아내는게 주요 임무인데....어떻게 할까? 알림을 눌러볼까? 알림을 밀어두고 태블릿부터 살펴볼까?");
                     setShowDialogue(true);
                 }, 700);
             }, 1500);
@@ -98,8 +124,15 @@ const TabletScreen = ({ onComplete }) => {
     };
 
     // Handle dialogue click to dismiss
+    // Handle dialogue click to dismiss or show next message
     const handleDialogueClick = () => {
-        setShowDialogue(false);
+        if (dialogueQueue.length > 0) {
+            const nextMsg = dialogueQueue[0];
+            setDialogueText(nextMsg);
+            setDialogueQueue(prev => prev.slice(1));
+        } else {
+            setShowDialogue(false);
+        }
     };
 
     // Handle drag to dismiss
@@ -162,14 +195,38 @@ const TabletScreen = ({ onComplete }) => {
     };
 
     // P3 "나중에" button click - Dark Pattern Logic
+    const [guiltStep, setGuiltStep] = useState(1); // 1: Warning, 2: Confirmshaming
     const handleLaterClick = () => {
+        setGuiltStep(1); // Always start at step 1
         setShowGuiltModal(true);
-        // User requesting: Show Modal first -> Read time -> Then Dialogue
-        setTimeout(() => {
-            setDialogueText("맞아...서둘러 A의 위치를 찾는게 먼저지. 빨리 인증부터 하자.");
-            setShowDialogue(true);
-        }, 1500); // 1.5s delay for reading the warning
     };
+
+    // P3 Dark Pattern - "Keep Vulnerable" click handler
+    const [isGuiltModalShaking, setIsGuiltModalShaking] = useState(false);
+
+    const handleGuiltLeave = () => {
+        if (guiltStep === 1) {
+            // Step 1 -> Step 2 (Confirmshaming)
+            setGuiltStep(2);
+        } else {
+            // Step 2 -> User Choice (Future Branch)
+            // For now, maybe just alert or log, as the user said "Next time implementation"
+            // But we must allow clicking it now.
+            // Let's just create a placeholder action
+            console.log("User chose to keep vulnerable (Branch point)");
+            alert("다음 업데이트에서 구현될 분기점입니다.\n(정보 유출 위험 감수 선택)");
+        }
+    };
+
+    // Auto-trigger dialogue when entering Step 2
+    useEffect(() => {
+        if (guiltStep === 2) {
+            // User's specific dialogue sequence
+            setDialogueText("정보 유출을 감수할거냐고..? 정말 기분 나쁜 버튼이네. 그냥 아니요 라고 하면 될텐데.");
+            setDialogueQueue(["어떻게 할까...선택하자. 내가 선택해야해."]);
+            setShowDialogue(true);
+        }
+    }, [guiltStep]);
 
     const handleGuiltStay = () => {
         setShowGuiltModal(false);
@@ -179,15 +236,14 @@ const TabletScreen = ({ onComplete }) => {
         if (lockoutTimer > 0) return;
 
         // Validation Rule
-        const isNameCorrect = inputName.trim() === '김소희';
+        const isNameCorrect = inputName.trim() === '김하얀';
         // Allow just 20080824 for now, can be flexible later
-        const isDOBCorrect = inputDOB.trim() === '20080824';
+        const isDOBCorrect = inputDOB.trim() === '20110824';
         const isAnsCorrect = securityAnswer === 'cake';
 
         if (isNameCorrect && isDOBCorrect && isAnsCorrect) {
-            // Success -> P5 (Placeholder alert for now)
-            alert("인증 성공! (P5 연결 예정)");
-            if (onComplete) onComplete();
+            // Success -> P5 (Log Processing)
+            setPhase('authProcessing');
         } else {
             // Fail
             setAuthError('인증 정보가 일치하지 않습니다.');
@@ -223,6 +279,25 @@ const TabletScreen = ({ onComplete }) => {
             onTouchMove={handleDragMove}
             onTouchEnd={handleDragEnd}
         >
+            {/* Global Styles for Keyframes */}
+            <style>
+                {`
+                @keyframes shake {
+                    10%, 90% {
+                        transform: translate3d(-1px, 0, 0);
+                    }
+                    20%, 80% {
+                        transform: translate3d(2px, 0, 0);
+                    }
+                    30%, 50%, 70% {
+                        transform: translate3d(-4px, 0, 0);
+                    }
+                    40%, 60% {
+                        transform: translate3d(4px, 0, 0);
+                    }
+                }
+                `}
+            </style>
             {/* Game UI Overlay - Hearts (dynamic count) */}
             <div style={{
                 position: 'fixed',
@@ -323,6 +398,196 @@ const TabletScreen = ({ onComplete }) => {
                 }}>
                     모바일 작동방식과 동일한 로직이 적용됩니다.
                 </div>
+
+                {/* P5: Auth Processing (Console Logs) */}
+                {phase === 'authProcessing' && (
+                    <div style={{
+                        width: '100%', height: '100%',
+                        background: '#000',
+                        fontFamily: 'monospace',
+                        color: '#00ff00',
+                        padding: '40px',
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center'
+                    }}>
+                        <div style={{ fontSize: '1.2rem', marginBottom: '20px' }}>SECURE_BOOT_LOADER v4.0.1</div>
+                        <LogMessage delay={0} text="> 보안 토큰 생성 중..." />
+                        <LogMessage delay={800} text="> 기기 소유자 확인 중... OK" />
+                        <LogMessage delay={1600} text="> 연결된 기기 탐색 중..." />
+                        <LogMessage delay={2400} text="> 탐색 정확도 계산 중..." />
+                        <RedirectToP6 onComplete={() => setPhase('traceMode')} delay={3500} />
+                    </div>
+                )}
+
+                {/* P6: Location Trace Mode (Main Interface) */}
+                {phase === 'traceMode' && (
+                    <div style={{
+                        width: '100%', height: '100%',
+                        background: '#1c1c1e', // Dark charcoal
+                        display: 'flex', flexDirection: 'column',
+                        position: 'relative',
+                        color: '#fff',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                    }}>
+                        {/* Status Bar */}
+                        <div style={{
+                            height: '40px',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            padding: '0 20px',
+                            fontSize: '0.9rem',
+                            fontWeight: '600',
+                            background: 'rgba(28, 28, 30, 0.9)',
+                            borderBottom: '1px solid rgba(255,255,255,0.1)'
+                        }}>
+                            <div>{currentTime}</div>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <span>📶</span>
+                                <span>28%</span>
+                                <span style={{ fontSize: '1.1rem' }}>🔋</span>
+                            </div>
+                        </div>
+
+                        {/* App Header */}
+                        <div style={{
+                            padding: '12px 20px',
+                            borderBottom: '1px solid rgba(255,255,255,0.1)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                        }}>
+                            <span style={{ color: '#8e8e93', fontSize: '1.2rem' }}>←</span>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 'bold', letterSpacing: '0.5px' }}>Footprint Finder</div>
+                                <div style={{ fontSize: '0.75rem', color: '#ff3b30', fontWeight: 'bold', animation: 'pulse 2s infinite' }}>Emergency Trace Mode</div>
+                            </div>
+                            <div style={{ width: '20px' }}></div>
+                        </div>
+
+                        {/* Map Area */}
+                        <div style={{
+                            flex: 1,
+                            background: '#0a0a0a',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            display: 'flex', justifyContent: 'center', alignItems: 'center'
+                        }}>
+                            {/* Placeholder Map - User will replace, just showing AI direction */}
+                            <div style={{
+                                width: '100%', height: '100%',
+                                background: 'radial-gradient(circle at center, #1a2a3a 0%, #000000 100%)',
+                                position: 'absolute', opacity: 0.6
+                            }}></div>
+
+                            {/* Search Pulse Animation */}
+                            <div style={{
+                                width: '200px', height: '200px',
+                                border: '2px solid rgba(0, 255, 255, 0.5)',
+                                borderRadius: '50%',
+                                position: 'absolute',
+                                animation: 'ping 2.5s infinite'
+                            }}></div>
+                            <div style={{
+                                width: '100px', height: '100px',
+                                background: 'rgba(0, 255, 255, 0.1)',
+                                borderRadius: '50%',
+                                position: 'absolute',
+                                boxShadow: '0 0 20px rgba(0,255,255,0.2)'
+                            }}></div>
+
+                            <div style={{
+                                position: 'absolute', top: '20px', left: '20px',
+                                background: 'rgba(0,0,0,0.6)', padding: '5px 10px', borderRadius: '5px',
+                                fontSize: '0.8rem', color: '#00ffff', border: '1px solid rgba(0,255,255,0.3)'
+                            }}>
+                                최근 신호 감지 범위
+                            </div>
+                        </div>
+
+                        {/* Bottom Information Panel */}
+                        <div style={{
+                            height: '50%',
+                            background: '#1c1c1e',
+                            padding: '20px',
+                            display: 'flex', flexDirection: 'column',
+                            gap: '15px'
+                        }}>
+                            {/* Location Log Cards */}
+                            <div style={{
+                                background: 'rgba(44, 44, 46, 0.6)',
+                                border: '1px solid rgba(0, 255, 255, 0.3)',
+                                borderRadius: '12px', padding: '15px',
+                                position: 'relative', overflow: 'hidden'
+                            }}>
+                                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: '#00ffff' }}></div>
+                                <div style={{ fontSize: '0.8rem', color: '#8e8e93', marginBottom: '4px' }}>마지막 위치 기록</div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>2025.08.24 08:13</span>
+                                    <span style={{ color: '#ffcc00', fontSize: '0.85rem', border: '1px solid #ffcc00', padding: '2px 6px', borderRadius: '4px' }}>신뢰도: 중간</span>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <div style={{ flex: 1, background: '#2c2c2e', padding: '12px', borderRadius: '10px', opacity: 0.5 }}>
+                                    <div style={{ fontSize: '0.75rem', color: '#8e8e93' }}>이동 경로 기록</div>
+                                    <div style={{ fontSize: '0.9rem' }}>비활성화</div>
+                                </div>
+                                <div style={{ flex: 1, background: 'rgba(255, 59, 48, 0.1)', border: '1px solid rgba(255, 59, 48, 0.3)', padding: '12px', borderRadius: '10px' }}>
+                                    <div style={{ fontSize: '0.75rem', color: '#ff3b30' }}>긴급 모드</div>
+                                    <div style={{ fontSize: '0.9rem', color: '#ff3b30' }}>User Action Reg</div>
+                                </div>
+                            </div>
+
+                            {/* System Dialogue */}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: '10px' }}>
+                                <div style={{ fontSize: '0.85rem', color: '#00ffff', marginBottom: '4px', fontFamily: 'monospace' }}>SYSTEM: 마지막 감지 이후 추가 신호가 확인되지 않았습니다.</div>
+                                <div style={{ fontSize: '0.85rem', color: '#00ffff', fontFamily: 'monospace' }}>SYSTEM: 현재 제공 가능한 정보는 제한적입니다.</div>
+                            </div>
+
+                            {/* Monologue Subtitle */}
+                            <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+                                <span style={{
+                                    background: 'rgba(0,0,0,0.5)', padding: '4px 12px', borderRadius: '4px',
+                                    color: '#fff', fontSize: '0.9rem', fontStyle: 'italic',
+                                    textShadow: '0 1px 2px rgba(0,0,0,0.8)'
+                                }}>
+                                    "생일날…? 왜 하필 생일날 사라진걸까…"
+                                </span>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <button style={{
+                                    width: '100%', padding: '15px',
+                                    background: 'linear-gradient(90deg, #00c6ff 0%, #0072ff 100%)',
+                                    border: 'none', borderRadius: '12px',
+                                    color: '#fff', fontSize: '1rem', fontWeight: 'bold',
+                                    boxShadow: '0 0 15px rgba(0, 198, 255, 0.4)',
+                                    cursor: 'pointer'
+                                }} onClick={() => alert("P7 정확도 업그레이드 (구현 예정)")}>
+                                    정확도 올리고 위치 추적
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 'normal', opacity: 0.8, marginTop: '2px' }}>
+                                        정확도를 높이면 보다 상세한 위치를 확인할 수 있습니다.
+                                    </div>
+                                </button>
+
+                                <button style={{
+                                    width: '100%', padding: '10px',
+                                    background: 'transparent',
+                                    border: '1px solid #3a3a3c', borderRadius: '12px',
+                                    color: '#8e8e93', fontSize: '0.9rem',
+                                    cursor: 'pointer'
+                                }} onClick={() => {
+                                    if (confirm("정말 이 앱을 종료하시겠어요?\n(추적 대상이 휴대폰을 소지하지 않은 경우, 본 서비스는 효과가 없을 수 있습니다.)")) {
+                                        alert("태블릿 홈 화면 복귀 (구현 예정)");
+                                        // setPhase('tabletHome'); // Implement later
+                                    }
+                                }}>
+                                    앱 종료하고 다른 단서 찾기
+                                    <div style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '2px' }}>
+                                        현재 정보만으로는 추적이 어려울 수 있습니다.
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Tablet Device */}
@@ -565,6 +830,18 @@ const TabletScreen = ({ onComplete }) => {
                                     />
                                 </svg>
                             </div>
+                            <p style={{
+                                position: 'absolute',
+                                bottom: '30px',
+                                fontSize: '0.75rem',
+                                color: '#000',
+                                fontWeight: '500',
+                                textAlign: 'center',
+                                opacity: 0.8,
+                                width: '100%'
+                            }}>
+                                이 앱은 소유자의 휴대폰 위치 추적을 기반으로 작동합니다.
+                            </p>
                         </div>
                     )}
 
@@ -747,47 +1024,101 @@ const TabletScreen = ({ onComplete }) => {
                                     zIndex: 50 // Below dialogue (which is 100 usually or outside)
                                 }}>
                                     <div style={{
-                                        width: '300px',
+                                        width: '320px',
                                         background: 'rgba(255,255,255,0.95)',
                                         borderRadius: '14px',
-                                        padding: '20px',
+                                        padding: '24px',
                                         textAlign: 'center',
                                         backdropFilter: 'blur(10px)',
-                                        boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+                                        boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                                        animation: isGuiltModalShaking ? 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both' : 'fadeIn 0.2s ease-out'
                                     }}>
-                                        <h3 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '8px', color: '#ff3b30' }}>정말 그만두시겠습니까?</h3>
-                                        <p style={{ fontSize: '0.9rem', color: '#333', marginBottom: '20px', lineHeight: 1.4 }}>
-                                            인증을 완료하지 않으면 기기를 사용할 수 없으며,<br />
-                                            <strong>중요한 단서</strong>를 놓칠 수도 있습니다.
-                                        </p>
-                                        <button
-                                            onClick={handleGuiltStay}
-                                            style={{
-                                                width: '100%',
-                                                padding: '12px',
-                                                background: '#007aff',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '10px',
-                                                fontSize: '1rem',
-                                                fontWeight: '600',
-                                                cursor: 'pointer',
-                                                marginBottom: '10px'
-                                            }}
-                                        >
-                                            보안 인증 계속하기
-                                        </button>
-                                        <button
-                                            style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                color: '#8e8e93',
-                                                fontSize: '0.85rem',
-                                                cursor: 'default' // Fake disabled feel, or just non-functional for dark pattern simulation
-                                            }}
-                                        >
-                                            취약한 상태로 유지 (비활성)
-                                        </button>
+                                        {guiltStep === 1 ? (
+                                            <>
+                                                <h3 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '10px', color: '#000' }}>
+                                                    정말 그만두시겠습니까?
+                                                </h3>
+                                                <p style={{ fontSize: '0.95rem', color: '#333', marginBottom: '25px', lineHeight: 1.5, wordBreak: 'keep-all' }}>
+                                                    지금 인증을 중단하시면<br />
+                                                    <span style={{ color: '#ff3b30', fontWeight: 'bold' }}>중요한 단서</span>를 찾을 수 없게 됩니다.
+                                                </p>
+                                                <button
+                                                    onClick={handleGuiltStay}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '14px',
+                                                        background: '#007aff',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '12px',
+                                                        fontSize: '1rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer',
+                                                        marginBottom: '12px',
+                                                        boxShadow: '0 2px 5px rgba(0,122,255,0.2)'
+                                                    }}
+                                                >
+                                                    보안 인증 계속하기
+                                                </button>
+                                                <button
+                                                    onClick={handleGuiltLeave}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: '#8e8e93',
+                                                        fontSize: '0.85rem',
+                                                        cursor: 'pointer',
+                                                        textDecoration: 'underline'
+                                                    }}
+                                                >
+                                                    취약한 상태로 유지 (비활성)
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div style={{ fontSize: '2rem', marginBottom: '10px' }}>⚠️</div>
+                                                <h3 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '10px', color: '#ff3b30' }}>
+                                                    경고: 보안 위험 감지
+                                                </h3>
+                                                <p style={{ fontSize: '0.9rem', color: '#1c1c1e', marginBottom: '25px', lineHeight: 1.5, wordBreak: 'keep-all', textAlign: 'left', background: '#f2f2f7', padding: '10px', borderRadius: '8px' }}>
+                                                    지금 인증을 그만두면 <strong>개인정보 유출</strong> 및 <strong>데이터 영구 삭제</strong> 위험이 있습니다.<br /><br />
+                                                    그래도 인증을 그만 두시겠습니까?
+                                                </p>
+                                                <button
+                                                    onClick={handleGuiltStay}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '14px',
+                                                        background: '#34c759', // Green for safety
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '12px',
+                                                        fontSize: '1rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer',
+                                                        marginBottom: '12px',
+                                                        boxShadow: '0 2px 5px rgba(52, 199, 89, 0.2)'
+                                                    }}
+                                                >
+                                                    데이터 보호하고 인증하기 (추천)
+                                                </button>
+                                                <button
+                                                    onClick={handleGuiltLeave}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '10px',
+                                                        background: '#e5e5ea',
+                                                        color: '#8e8e93', // Shameful grey
+                                                        border: 'none',
+                                                        borderRadius: '12px',
+                                                        fontSize: '0.8rem',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    네, 정보 유출 위험을 감수하겠습니다
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -835,7 +1166,7 @@ const TabletScreen = ({ onComplete }) => {
                                 backdropFilter: 'blur(10px)',
                                 borderBottom: '1px solid rgba(0,0,0,0.1)'
                             }}>
-                                <span style={{ fontWeight: '600', fontSize: '17px' }}>A의 태블릿 보안 인증</span>
+                                <span style={{ fontWeight: '600', fontSize: '17px', color: '#1c1c1e' }}>A의 태블릿 보안 인증</span>
                             </div>
 
                             {/* Scrollable Content */}
@@ -868,7 +1199,7 @@ const TabletScreen = ({ onComplete }) => {
                                     }}>👤</div>
                                     <div>
                                         <div style={{ fontSize: '1rem', fontWeight: '600', color: '#000' }}>기기 소유자: A</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#8e8e93' }}>최근 사용: 8월 24일 19:58</div>
+                                        <div style={{ fontSize: '0.8rem', color: '#8e8e93' }}>최근 사용: 8월 23일 19:58</div>
                                     </div>
                                 </div>
 
@@ -889,12 +1220,13 @@ const TabletScreen = ({ onComplete }) => {
                                             style={{
                                                 width: '100%', padding: '12px',
                                                 borderRadius: '10px', border: '1px solid #e5e5ea',
-                                                fontSize: '1rem', background: lockoutTimer > 0 ? '#f2f2f7' : '#fff'
+                                                fontSize: '1rem', color: '#000',
+                                                background: lockoutTimer > 0 ? '#f2f2f7' : '#fff'
                                             }}
                                         />
                                     </div>
 
-                                    {/* DOB Input */}
+                                    {/* DOB Input with Realistic Picker */}
                                     <div>
                                         <label style={{ display: 'block', fontSize: '0.9rem', color: '#6e6e73', marginBottom: '8px', marginLeft: '4px' }}>
                                             생년월일 (8자리)
@@ -912,10 +1244,29 @@ const TabletScreen = ({ onComplete }) => {
                                                 style={{
                                                     width: '100%', padding: '12px',
                                                     borderRadius: '10px', border: '1px solid #e5e5ea',
-                                                    fontSize: '1rem', background: lockoutTimer > 0 ? '#f2f2f7' : '#fff'
+                                                    fontSize: '1rem', color: '#000',
+                                                    background: lockoutTimer > 0 ? '#f2f2f7' : '#fff'
                                                 }}
                                             />
-                                            <span style={{ position: 'absolute', right: '12px', top: '12px', fontSize: '1.2rem', opacity: 0.5 }}>📅</span>
+                                            {/* Hidden native date picker */}
+                                            <input
+                                                type="date"
+                                                style={{
+                                                    position: 'absolute', right: '10px', top: '10px',
+                                                    opacity: 0, width: '30px', height: '30px',
+                                                    cursor: 'pointer', zIndex: 10
+                                                }}
+                                                onChange={(e) => {
+                                                    // Convert YYYY-MM-DD to YYYYMMDD
+                                                    const val = e.target.value.replace(/-/g, '');
+                                                    setInputDOB(val);
+                                                }}
+                                                disabled={lockoutTimer > 0}
+                                            />
+                                            <span style={{
+                                                position: 'absolute', right: '12px', top: '12px',
+                                                fontSize: '1.2rem', opacity: 0.5, pointerEvents: 'none'
+                                            }}>📅</span>
                                         </div>
                                     </div>
 
@@ -980,9 +1331,15 @@ const TabletScreen = ({ onComplete }) => {
                                     </button>
 
                                     <div style={{ textAlign: 'center' }}>
-                                        <span style={{ color: '#007aff', fontSize: '0.85rem', textDecoration: 'none' }}>
+                                        <button
+                                            onClick={() => setShowHintModal(true)}
+                                            style={{
+                                                background: 'none', border: 'none',
+                                                color: '#007aff', fontSize: '0.85rem',
+                                                textDecoration: 'none', cursor: 'pointer'
+                                            }}>
                                             인증이 어려우신가요?
-                                        </span>
+                                        </button>
                                     </div>
 
                                 </div>
@@ -997,6 +1354,17 @@ const TabletScreen = ({ onComplete }) => {
                     width: '8px', height: '8px', background: '#1a1a1a', borderRadius: '50%', border: '1px solid #333'
                 }}></div>
             </div>
+
+            {/* Blocking Overlay when Dialogue is open - Prevents clicking behind */}
+            {showDialogue && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    zIndex: 199, // Just below dialogue (200)
+                    background: 'transparent', // Or 'rgba(0,0,0,0.1)' for debug
+                    cursor: 'default'
+                }} onClick={(e) => e.stopPropagation()}></div>
+            )}
 
             {/* Dialogue Box - Outside tablet, bottom of screen (ARoom style) */}
             {showDialogue && (
@@ -1029,6 +1397,50 @@ const TabletScreen = ({ onComplete }) => {
                 </div>
             )}
 
+            {/* Hint Modal */}
+            {showHintModal && (
+                <div style={{
+                    position: 'absolute',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.4)',
+                    backdropFilter: 'blur(3px)',
+                    zIndex: 1000,
+                    display: 'flex', justifyContent: 'center', alignItems: 'center'
+                }} onClick={() => setShowHintModal(false)}>
+                    <div style={{
+                        background: 'rgba(255,255,255,0.95)',
+                        backdropFilter: 'blur(20px)',
+                        padding: '25px',
+                        borderRadius: '16px',
+                        width: '80%',
+                        maxWidth: '320px',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                        textAlign: 'center'
+                    }} onClick={e => e.stopPropagation()}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '15px', color: '#000' }}>💡 참고 힌트</h3>
+                        <p style={{ fontSize: '1rem', color: '#333', marginBottom: '20px', lineHeight: 1.5, wordBreak: 'keep-all' }}>
+                            수사 본부로부터 받은 <strong>일기장</strong>을 확인해보세요.
+                        </p>
+                        <button
+                            onClick={() => setShowHintModal(false)}
+                            style={{
+                                width: '100%',
+                                padding: '12px',
+                                background: '#007aff',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '12px',
+                                fontSize: '1rem',
+                                fontWeight: '600',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            확인
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <style>{`
                 @keyframes pulse {
                     0%, 100% { opacity: 1; transform: scale(1); }
@@ -1055,9 +1467,36 @@ const TabletScreen = ({ onComplete }) => {
                     50% { transform: scale(1.3); }
                     100% { transform: scale(1); }
                 }
+                @keyframes shake {
+                    10%, 90% { transform: translate3d(-1px, 0, 0); }
+                    20%, 80% { transform: translate3d(2px, 0, 0); }
+                    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+                    40%, 60% { transform: translate3d(4px, 0, 0); }
+                }
+                @keyframes ping {
+                    0% { transform: scale(0.8); opacity: 0.8; }
+                    80%, 100% { transform: scale(1.5); opacity: 0; }
+                }
             `}</style>
         </div>
     );
+};
+
+const LogMessage = ({ text, delay }) => {
+    const [visible, setVisible] = useState(false);
+    useEffect(() => {
+        const timer = setTimeout(() => setVisible(true), delay);
+        return () => clearTimeout(timer);
+    }, [delay]);
+    return visible ? <div style={{ marginBottom: '8px' }}>{text}</div> : null;
+};
+
+const RedirectToP6 = ({ onComplete, delay }) => {
+    useEffect(() => {
+        const timer = setTimeout(onComplete, delay);
+        return () => clearTimeout(timer);
+    }, [delay, onComplete]);
+    return null;
 };
 
 // Helper component for app launch timer

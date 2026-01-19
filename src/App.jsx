@@ -7,6 +7,7 @@ import './styles/FlashlightEffect.css'; // For global cursor styling
 
 function App() {
   const [stage, setStage] = useState('intro'); // 'intro', 'hq', ...
+  const [tabletPhase, setTabletPhase] = useState(null); // For Tablet dev menu
   const [devMenuOpen, setDevMenuOpen] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -15,9 +16,24 @@ function App() {
     { key: 'intro', label: 'Intro' },
     { key: 'hq', label: 'HQ' },
     { key: 'room', label: 'A\'s Room' },
-    { key: 'tablet', label: 'Tablet' },
-    // Add more pages here as they are created
+    // Tablet Expanded Options
+    { key: 'tablet-off', label: '📱 Tablet (OFF)', type: 'tablet', phase: 'off' },
+    { key: 'tablet-p1', label: '📱 Tablet (P1: Noti)', type: 'tablet', phase: 'p1' },
+    { key: 'tablet-p2', label: '📱 Tablet (P2: Splash)', type: 'tablet', phase: 'p2' },
+    { key: 'tablet-p3', label: '📱 Tablet (P3: Intro)', type: 'tablet', phase: 'p3' },
+    { key: 'tablet-p4', label: '📱 Tablet (P4: Input)', type: 'tablet', phase: 'p4' },
   ];
+
+  const handlePageChange = (page) => {
+    if (page.type === 'tablet') {
+      setStage('tablet');
+      setTabletPhase(page.phase);
+    } else {
+      setStage(page.key);
+      setTabletPhase(null);
+    }
+    setDevMenuOpen(false);
+  };
 
   // Global mouse position tracking for cursor (only needed for non-intro pages)
   useEffect(() => {
@@ -83,27 +99,29 @@ function App() {
             background: 'rgba(0,0,0,0.9)',
             borderBottomLeftRadius: '10px',
             overflow: 'hidden',
-            boxShadow: '0 5px 20px rgba(0,0,0,0.5)'
+            boxShadow: '0 5px 20px rgba(0,0,0,0.5)',
+            maxHeight: '80vh',
+            overflowY: 'auto'
           }}>
             {pages.map(page => (
               <button
                 key={page.key}
-                onClick={() => { setStage(page.key); setDevMenuOpen(false); }}
+                onClick={() => handlePageChange(page)}
                 style={{
                   display: 'block',
                   width: '100%',
-                  color: stage === page.key ? '#4fc3f7' : 'white',
-                  background: stage === page.key ? 'rgba(79, 195, 247, 0.15)' : 'transparent',
+                  textAlign: 'left',
+                  color: (stage === page.key || (page.type === 'tablet' && stage === 'tablet' && tabletPhase === page.phase)) ? '#4fc3f7' : 'white',
+                  background: (stage === page.key || (page.type === 'tablet' && stage === 'tablet' && tabletPhase === page.phase)) ? 'rgba(79, 195, 247, 0.15)' : 'transparent',
                   border: 'none',
                   borderBottom: '1px solid #333',
                   padding: '10px 20px',
                   cursor: 'none',
-                  textAlign: 'left',
                   fontSize: '0.9rem',
-                  transition: 'background 0.15s'
+                  transition: 'background 0.2s'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = stage === page.key ? 'rgba(79, 195, 247, 0.15)' : 'transparent'}
+                onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
+                onMouseLeave={(e) => e.target.style.background = (stage === page.key || (page.type === 'tablet' && stage === 'tablet' && tabletPhase === page.phase)) ? 'rgba(79, 195, 247, 0.15)' : 'transparent'}
               >
                 {page.label}
               </button>
@@ -113,20 +131,13 @@ function App() {
       </div>
 
       {/* Stage-based Rendering */}
-      {stage === 'intro' && (
-        <IntroPage onComplete={() => setStage('hq')} />
-      )}
-      {stage === 'hq' && (
-        <InvestigationHQ onComplete={() => setStage('room')} />
-      )}
-      {stage === 'room' && (
-        <ARoom onComplete={() => setStage('tablet')} />
-      )}
-      {stage === 'tablet' && (
-        <TabletScreen onComplete={() => console.log('Tablet complete - next stage')} />
-      )}
+      {stage === 'intro' && <IntroPage onComplete={() => setStage('hq')} />}
+      {stage === 'hq' && <InvestigationHQ onNext={() => setStage('room')} />}
+      {stage === 'room' && <ARoom onComplete={() => setStage('tablet')} />}
+      {stage === 'tablet' && <TabletScreen onComplete={() => setStage('hq')} initialPhase={tabletPhase} />}
     </div>
   );
 }
 
 export default App;
+
