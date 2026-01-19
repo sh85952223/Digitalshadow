@@ -56,7 +56,7 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
             const timer = setTimeout(() => {
                 setDialogue({
                     show: true,
-                    text: "분석 모드..? 이게 뭐지?",
+                    text: "이게 그 '가챠 킹덤'이구나. 메인 화면엔 화려한 성공 사례만 가득해. 실패할 거란 생각은 전혀 들지 않게 만들어놨네.",
                     onComplete: null
                 });
             }, 400);
@@ -348,7 +348,7 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                                         <div style={{ fontSize: '22px', fontWeight: '800', color: '#FF3B30', marginBottom: '5px' }}>FAILURE</div>
                                         <div style={{ fontSize: '16px', color: '#ddd' }}>플래티넘 레전드 획득 실패</div>
                                         <div style={{ height: '1px', background: '#444', margin: '15px 0' }}></div>
-                                        <div style={{ fontSize: '12px', color: '#666' }}>2025.08.16 22:14</div>
+                                        <div style={{ fontSize: '12px', color: '#666' }}>2025.08.22 23:45</div>
                                     </div>
 
                                     <button disabled style={{
@@ -366,7 +366,12 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                                 <div>
                                     <h3 style={{ fontSize: '18px', marginBottom: '15px', paddingLeft: '5px' }}>기록 (History)</h3>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                        {[...Array(8)].map((_, i) => (
+                                        {[
+                                            { d: "22", t: "23:45" }, { d: "22", t: "20:30" },
+                                            { d: "21", t: "21:15" }, { d: "20", t: "18:20" },
+                                            { d: "19", t: "22:10" }, { d: "18", t: "21:40" },
+                                            { d: "17", t: "20:05" }, { d: "17", t: "19:30" }
+                                        ].map((item, i) => (
                                             <div key={i} style={{
                                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                                 padding: '12px 16px', background: '#1c1c1e', borderRadius: '12px',
@@ -374,7 +379,7 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                                             }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                     <span style={{ fontSize: '14px' }}>플래티넘 뽑기</span>
-                                                    <span style={{ fontSize: '11px', color: '#666' }}>2025.08.16 22:{14 - i}</span>
+                                                    <span style={{ fontSize: '11px', color: '#666' }}>2025.08.{item.d} {item.t}</span>
                                                 </div>
                                                 <span style={{ color: '#FF3B30', fontWeight: 'bold', fontSize: '13px' }}>실패</span>
                                             </div>
@@ -400,7 +405,7 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                                             <span>플래티넘 레전드</span>
                                             <span style={{ color: '#aaa', textDecoration: 'line-through' }}>40%</span>
                                         </div>
-                                        <div style={{ fontSize: '11px', color: '#555', marginTop: '10px' }}>Ended: 2025.08.12</div>
+                                        <div style={{ fontSize: '11px', color: '#555', marginTop: '10px' }}>Ended: 2025.08.13</div>
                                     </div>
                                 </div>
                             )}
@@ -418,14 +423,23 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                                             ].map((n, i) => (
                                                 <div key={i}
                                                     onClick={() => n.highlight && setNoticeOpen(true)}
+                                                    className={n.highlight ? 'guide-pulse' : ''}
                                                     style={{
                                                         padding: '16px', background: n.highlight ? 'rgba(94, 92, 230, 0.15)' : 'transparent',
                                                         borderBottom: '1px solid #222', cursor: n.highlight ? 'pointer' : 'default',
-                                                        display: 'flex', justifyContent: 'space-between'
+                                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative'
                                                     }}
                                                 >
                                                     <span style={{ color: n.highlight ? '#bf5af2' : '#fff', fontSize: '14px' }}>{n.t}</span>
-                                                    <span style={{ fontSize: '12px', color: '#666' }}>{n.d}</span>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span style={{ fontSize: '12px', color: '#666' }}>{n.d}</span>
+                                                        {n.highlight && (
+                                                            <div style={{
+                                                                width: '6px', height: '6px', borderRadius: '50%',
+                                                                background: '#ff3b30', boxShadow: '0 0 5px #ff3b30'
+                                                            }}></div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -453,19 +467,30 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                             display: 'flex', justifyContent: 'space-around', alignItems: 'center'
                         }}>
                             {[
-                                { id: 'main', icon: '🏠', l: "홈", msg: "메인 화면이네." },
-                                { id: 'log', icon: '📝', l: "기록", msg: "기록을 볼까..." },
-                                { id: 'prob', icon: '📊', l: "확률", msg: "확률 표라..." },
-                                { id: 'notice', icon: '🔔', l: "공지", msg: "공지사항이군." }
+                                { id: 'main', icon: '🏠', l: "홈", msg: "메인 화면은 화려한 성공담뿐이야. 실패할 거란 생각은 들지 않게 설계되었군." },
+                                { id: 'log', icon: '📝', l: "기록", msg: "8월 17일부터 실패가 계속되었어. 일기장에 적힌 '이상하다'는 시점과 일치해.", highlight: true },
+                                { id: 'prob', icon: '📊', l: "확률", msg: "10%라... 하얀이는 분명 40%로 알고 있었지. 따로 보내는 알림 없이 수치를 바꾼 거야. 어딘가에는 공지하긴 했을텐데...", highlight: true },
+                                { id: 'notice', icon: '🔔', l: "공지", msg: "수많은 이벤트 공지 사이에 '확률 조정'을 숨겨놨어. 사용자가 일부러 못 보게 하려는 의도야.", highlight: true }
                             ].map(item => (
                                 <div key={item.id}
                                     onClick={() => {
                                         setAppTab(item.id);
                                         setDialogue({ show: true, text: item.msg, onComplete: null });
                                     }}
-                                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: appTab === item.id ? 1 : 0.4, cursor: 'pointer' }}>
+                                    className={item.highlight && appTab !== item.id ? 'guide-pulse' : ''}
+                                    style={{
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                        opacity: appTab === item.id ? 1 : 0.4, cursor: 'pointer',
+                                        position: 'relative'
+                                    }}>
                                     <div style={{ fontSize: '20px' }}>{item.icon}</div>
                                     <div style={{ fontSize: '10px', marginTop: '2px' }}>{item.l}</div>
+                                    {item.highlight && appTab !== item.id && (
+                                        <div style={{
+                                            position: 'absolute', top: -5, right: -5, width: '8px', height: '8px',
+                                            borderRadius: '50%', background: '#ff3b30', border: '1px solid #1a1a1a'
+                                        }}></div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -523,6 +548,8 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                 .gacha-breathing { animation: gachaPulse 2s infinite ease-in-out; }
                 @keyframes gachaPulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
                 @keyframes dialogueSlideUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+                .guide-pulse { animation: navPulse 2s infinite; }
+                @keyframes navPulse { 0% { opacity: 0.4; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 5px #BF5AF2); } 100% { opacity: 0.4; transform: scale(1); } }
             `}</style>
         </div>
     );
