@@ -4,7 +4,6 @@ import roomBg from '../assets/a_room_recovered.png';
 import mirrorBrokenImg from '../assets/uploaded_image_0_1768809857358.jpg';
 import mirrorRestoredImg from '../assets/uploaded_image_1_1768809857358.png';
 import hiddenNoteImg from '../assets/uploaded_image_2_1768809857358.png';
-import cursorImg from '../assets/flashlight_cursor_v3_1768538468305.png';
 // Import other assets just in case, though interaction logic is simplified
 import bedPapersImg from '../assets/bed_papers.png';
 import drawerLockImg from '../assets/drawer_lock.png';
@@ -109,7 +108,7 @@ const ARoomRecovered = ({ onComplete }) => {
                     setIsRestoring(false);
                     // Trigger dialogue after restoration
                     setPendingMirrorAction('restoredText');
-                    showMessage("이게 메모에서 말한 '스스로 형태를 찾은 조각난 진실'이라는 거구나!");
+                    showMessage("거울이 복구되었네. 이게 메모에서 말한 '스스로 형태를 찾은 조각난 진실'이라는 거구나! 거울 뒤에 쪽지가 있다.");
                 }, 2000); // 2s restoration animation
             }, 1000);
             return;
@@ -381,20 +380,18 @@ const ARoomRecovered = ({ onComplete }) => {
                 />
             )}
 
-            {/* Global Custom Cursor */}
+            {/* 전역 커서 포털: 항상 최상단에 보라색 십자선 커서 유지 */}
             {createPortal(
-                <img
-                    src={cursorImg}
-                    alt="cursor"
+                <div
+                    className="digital-cursor"
                     style={{
                         position: 'fixed',
-                        left: mousePos.x,
-                        top: mousePos.y,
-                        width: '32px',
-                        height: '32px',
-                        pointerEvents: 'none',
+                        left: 0,
+                        top: 0,
+                        '--x': `${mousePos.x}px`,
+                        '--y': `${mousePos.y}px`,
                         zIndex: 99999,
-                        transform: 'translate(-2px, -2px)'
+                        pointerEvents: 'none',
                     }}
                 />,
                 document.body
