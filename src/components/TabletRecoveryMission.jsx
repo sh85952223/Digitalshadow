@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import HintBrowser from './HintBrowser';
+import characterImage from '../assets/instructor.png';
 
 const TabletRecoveryMission = ({ onRecoverySuccess, onExit, initialStage }) => {
     // Phases: 'intro' -> 'settings' -> 'payment' -> 'service_mgmt' -> 'popup1' -> 'popup2' -> 'popup3' -> 'complete'
     const [stage, setStage] = useState(initialStage || 'intro');
     const [toastMessage, setToastMessage] = useState('');
+    const [showHint, setShowHint] = useState(false);
+    const [showInstructor, setShowInstructor] = useState(false);
 
     useEffect(() => {
         if (initialStage) setStage(initialStage);
@@ -52,7 +57,20 @@ const TabletRecoveryMission = ({ onRecoverySuccess, onExit, initialStage }) => {
     );
 
     // --- Handlers ---
-    const handleIntroNext = () => setStage('settings');
+    const handleIntroNext = () => {
+        // Instead of going straight to settings, show Instructor intel first
+        setShowInstructor(true);
+    };
+
+    const handleInstructorConfirm = () => {
+        setShowInstructor(false);
+        setShowHint(true); // Open the blog hint
+    };
+
+    const handleHintClose = () => {
+        setShowHint(false);
+        setStage('settings'); // Start the actual mission after reading hint
+    };
 
     // P11: Settings - 'Payment' leads to progress, others lead to dummy pages
     const handleSettingsClick = (menuItem) => {
@@ -143,6 +161,75 @@ const TabletRecoveryMission = ({ onRecoverySuccess, onExit, initialStage }) => {
             {/* P10: Intro */}
             {stage === 'intro' && (
                 <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#1e293b' }}>
+
+                    {/* Instructor Dialogue Overlay (Portal) */}
+                    {showInstructor && createPortal(
+                        <div style={{
+                            position: 'fixed', inset: 0,
+                            background: 'rgba(2, 6, 23, 0.95)', // HQ Dark Theme
+                            zIndex: 9999, // Highest priority
+                            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+                            animation: 'fadeIn 0.3s ease-out',
+                            cursor: 'auto'
+                        }}>
+                            {/* Character */}
+                            <img
+                                src={characterImage}
+                                alt="Instructor"
+                                style={{
+                                    position: 'absolute', bottom: 0, left: '5%', height: '55%', objectFit: 'contain',
+                                    filter: 'drop-shadow(10px 0 30px rgba(0,0,0,0.6))', zIndex: 10001, animation: 'slideRight 0.5s ease-out'
+                                }}
+                            />
+
+                            {/* Dialogue Box */}
+                            <div style={{
+                                width: '80%', maxWidth: '800px', marginBottom: '50px', zIndex: 10002,
+                                background: 'rgba(2, 6, 23, 0.9)',
+                                border: '2px solid rgba(33, 150, 243, 0.5)',
+                                boxShadow: '0 0 50px rgba(33, 150, 243, 0.3), inset 0 0 60px rgba(13, 71, 161, 0.2)',
+                                backdropFilter: 'blur(12px)', borderRadius: '4px', overflow: 'hidden'
+                            }}>
+                                {/* Tech Header */}
+                                <div style={{
+                                    height: '36px', background: 'linear-gradient(90deg, rgba(33, 150, 243, 0.15) 0%, transparent 100%)',
+                                    borderBottom: '1px solid rgba(33, 150, 243, 0.5)', display: 'flex', alignItems: 'center', paddingLeft: '24px'
+                                }}>
+                                    <div style={{ width: '8px', height: '8px', background: '#4fc3f7', borderRadius: '50%', boxShadow: '0 0 5px #4fc3f7', marginRight: '10px' }} />
+                                    <span style={{ fontFamily: 'monospace', fontSize: '0.9rem', color: '#4fc3f7', letterSpacing: '2px' }}>INTERVENTION // INSTRUCTOR</span>
+                                </div>
+
+                                {/* Content */}
+                                <div style={{ padding: '30px 40px', color: '#fff' }}>
+                                    <div style={{
+                                        display: 'inline-block', background: 'rgba(13, 71, 161, 0.3)', padding: '6px 16px',
+                                        borderLeft: '4px solid #4fc3f7', marginBottom: '20px', fontSize: '1.4rem', fontWeight: 'bold'
+                                    }}>
+                                        교관
+                                    </div>
+                                    <p style={{ lineHeight: '1.7', fontSize: '1.2rem', marginBottom: '30px', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                                        "잠깐! 요원, 그대로 진입하면 <strong>다크 패턴</strong>의 함정에 빠질 수 있다.<br />
+                                        기업은 자네가 해지하지 못하도록 온갖 트릭을 숨겨두었지.<br />
+                                        본부에서 입수한 <strong>[공략 데이터]</strong>를 먼저 숙지하고 침투하도록."
+                                    </p>
+                                    <button
+                                        onClick={handleInstructorConfirm}
+                                        style={{
+                                            width: '100%', padding: '18px', background: 'rgba(33, 150, 243, 0.2)',
+                                            border: '1px solid #4fc3f7', color: '#4fc3f7', fontSize: '1.1rem', fontWeight: 'bold',
+                                            cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 0 20px rgba(33, 150, 243, 0.2)'
+                                        }}
+                                        onMouseOver={(e) => { e.target.style.background = '#4fc3f7'; e.target.style.color = '#000'; }}
+                                        onMouseOut={(e) => { e.target.style.background = 'rgba(33, 150, 243, 0.2)'; e.target.style.color = '#4fc3f7'; }}
+                                    >
+                                        [수락] 공략 데이터 확인하기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>,
+                        document.body
+                    )}
+
                     <div style={{ color: '#ef4444', fontSize: '3rem', marginBottom: '1rem' }}>📉</div>
                     <h2 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>복구 미션</h2>
 
@@ -164,6 +251,8 @@ const TabletRecoveryMission = ({ onRecoverySuccess, onExit, initialStage }) => {
                     >
                         서비스 가입 취소하러 가기
                     </button>
+
+                    {showHint && <HintBrowser onClose={() => { setShowHint(false); setStage('settings'); }} />}
 
                 </div>
             )}
