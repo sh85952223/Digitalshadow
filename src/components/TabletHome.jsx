@@ -191,7 +191,7 @@ const TabletHome = ({ onOpenApp, onReturnToRoom, initialApp }) => {
                         <div style={{ width: '8px', height: '8px', background: yellowTheme.primary, marginRight: '15px', borderRadius: '50%', boxShadow: `0 0 8px ${yellowTheme.primary}` }}></div>
                         <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: yellowTheme.primary, letterSpacing: '2px', fontWeight: 'bold' }}>PERSONAL LOG // RECOVERY</span>
                     </div>
-                    <div style={{ padding: '2rem 3rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div style={{ padding: '2rem 3rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
                         <div style={{ display: 'inline-block', background: 'rgba(251, 191, 36, 0.15)', padding: '0.4rem 1.5rem', borderLeft: `4px solid ${yellowTheme.primary}`, marginBottom: '1rem', width: 'fit-content' }}>
                             <span style={{ color: '#fff', fontSize: '1.4rem', fontWeight: '800', letterSpacing: '0.05em' }}>나</span>
                         </div>
