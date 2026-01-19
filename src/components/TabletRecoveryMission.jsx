@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import HintBrowser from './HintBrowser';
 import characterImage from '../assets/instructor.png';
 
-const TabletRecoveryMission = ({ onRecoverySuccess, onExit, initialStage }) => {
+const TabletRecoveryMission = ({ onRecoverySuccess, onExit, initialStage, onHome }) => {
     // Phases: 'intro' -> 'settings' -> 'payment' -> 'service_mgmt' -> 'popup1' -> 'popup2' -> 'popup3' -> 'complete'
     const [stage, setStage] = useState(initialStage || 'intro');
     const [toastMessage, setToastMessage] = useState('');
@@ -595,6 +595,17 @@ const TabletRecoveryMission = ({ onRecoverySuccess, onExit, initialStage }) => {
                     </p>
                     {/* Visual Heart Restore Animation Area would be in TabletScreen, but we simulate completion here */}
                     <div style={{ color: '#059669', fontSize: '0.9rem' }}>생명력이 회복되었습니다. (+1 ❤️)</div>
+
+                    <button
+                        onClick={onHome}
+                        style={{
+                            marginTop: '24px', padding: '12px 24px', background: '#059669', color: '#fff',
+                            border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer',
+                            boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)'
+                        }}
+                    >
+                        태블릿 홈으로 돌아가기
+                    </button>
                 </div>
             )}
         </div>

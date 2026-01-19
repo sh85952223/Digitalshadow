@@ -5,6 +5,7 @@ import TabletTraceMode from './TabletTraceMode';
 import TabletUpgrade from './TabletUpgrade';
 import TabletHighPrecision from './TabletHighPrecision';
 import TabletRecoveryMission from './TabletRecoveryMission';
+import TabletHome from './TabletHome';
 
 const TabletScreen = ({ onComplete, initialPhase }) => {
     // Phases: off, booting, lockscreen, appLaunch, authIntro, authInput, authProcessing, traceMode
@@ -1250,10 +1251,16 @@ const TabletScreen = ({ onComplete, initialPhase }) => {
                         />
                     )}
 
+                    {/* P17: Tablet Home - iOS Style */}
+                    {phase === 'homeScreen' && (
+                        <TabletHome />
+                    )}
+
                     {phase === 'recoveryMission' && (
                         <TabletRecoveryMission
                             onRecoverySuccess={handleRecoverySuccess}
                             initialStage={recoveryStage}
+                            onHome={() => setPhase('homeScreen')}
                         />
                     )}
                 </div>
