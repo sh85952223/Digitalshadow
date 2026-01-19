@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import phoneBg from '../assets/phone_on_desk.png'; // Keeping the desk bg for the 'world' background
+import phoneBg from '../assets/phone_on_desk.png';
 
 const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
     // State management
@@ -17,13 +17,17 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
     const [appTab, setAppTab] = useState('main'); // main, log, prob, notice
     const [noticeOpen, setNoticeOpen] = useState(false);
 
+    // Visual Cue State
+    const [visitedTabs, setVisitedTabs] = useState({ log: false, prob: false, notice: false });
+    const [noticeRead, setNoticeRead] = useState(false);
+
     // Update time
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 10000);
         return () => clearInterval(timer);
     }, []);
 
-    const timeString = "22:31"; // Fixed plot time or currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const timeString = "22:31";
     const dateString = currentTime.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' });
 
     // Theme for Dialogue (Exactly matching ARoomRecovered)
@@ -176,9 +180,7 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                 <div style={{
                     position: 'absolute', inset: 0, zIndex: 0,
                     background: 'linear-gradient(135deg, #2c3e50 0%, #000000 100%)', // Default wallpaper
-                }}>
-                    {/* Add a subtle pattern or image if desired */}
-                </div>
+                }}></div>
 
                 {/* --- VIEW: LOCK SCREEN --- */}
                 {view === 'lock' && (
@@ -422,8 +424,13 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                                                 { t: "🛡 [클린] 불량이용자 제재", d: "2025.08.10" }
                                             ].map((n, i) => (
                                                 <div key={i}
-                                                    onClick={() => n.highlight && setNoticeOpen(true)}
-                                                    className={n.highlight ? 'guide-pulse' : ''}
+                                                    onClick={() => {
+                                                        if (n.highlight) {
+                                                            setNoticeOpen(true);
+                                                            setNoticeRead(true);
+                                                        }
+                                                    }}
+                                                    className={n.highlight && !noticeRead ? 'guide-pulse' : ''}
                                                     style={{
                                                         padding: '16px', background: n.highlight ? 'rgba(94, 92, 230, 0.15)' : 'transparent',
                                                         borderBottom: '1px solid #222', cursor: n.highlight ? 'pointer' : 'default',
@@ -433,7 +440,7 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                                                     <span style={{ color: n.highlight ? '#bf5af2' : '#fff', fontSize: '14px' }}>{n.t}</span>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                         <span style={{ fontSize: '12px', color: '#666' }}>{n.d}</span>
-                                                        {n.highlight && (
+                                                        {n.highlight && !noticeRead && (
                                                             <div style={{
                                                                 width: '6px', height: '6px', borderRadius: '50%',
                                                                 background: '#ff3b30', boxShadow: '0 0 5px #ff3b30'
@@ -469,15 +476,18 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                             {[
                                 { id: 'main', icon: '🏠', l: "홈", msg: "메인 화면은 화려한 성공담뿐이야. 실패할 거란 생각은 들지 않게 설계되었군." },
                                 { id: 'log', icon: '📝', l: "기록", msg: "8월 17일부터 실패가 계속되었어. 일기장에 적힌 '이상하다'는 시점과 일치해.", highlight: true },
-                                { id: 'prob', icon: '📊', l: "확률", msg: "10%라... 하얀이는 분명 40%로 알고 있었지. 따로 보내는 알림 없이 수치를 바꾼 거야. 어딘가에는 공지하긴 했을텐데...", highlight: true },
+                                { id: 'prob', icon: '📊', l: "확률", msg: "10%라... 하얀이는 분명 40%로 알고 있었지. 사용자에게 개인적인 알림은 없이 수치를 바꾼 거야.", highlight: true },
                                 { id: 'notice', icon: '🔔', l: "공지", msg: "수많은 이벤트 공지 사이에 '확률 조정'을 숨겨놨어. 사용자가 일부러 못 보게 하려는 의도야.", highlight: true }
                             ].map(item => (
                                 <div key={item.id}
                                     onClick={() => {
                                         setAppTab(item.id);
                                         setDialogue({ show: true, text: item.msg, onComplete: null });
+                                        if (item.highlight) {
+                                            setVisitedTabs(prev => ({ ...prev, [item.id]: true }));
+                                        }
                                     }}
-                                    className={item.highlight && appTab !== item.id ? 'guide-pulse' : ''}
+                                    className={item.highlight && appTab !== item.id && !visitedTabs[item.id] ? 'guide-pulse' : ''}
                                     style={{
                                         display: 'flex', flexDirection: 'column', alignItems: 'center',
                                         opacity: appTab === item.id ? 1 : 0.4, cursor: 'pointer',
@@ -485,7 +495,7 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                                     }}>
                                     <div style={{ fontSize: '20px' }}>{item.icon}</div>
                                     <div style={{ fontSize: '10px', marginTop: '2px' }}>{item.l}</div>
-                                    {item.highlight && appTab !== item.id && (
+                                    {item.highlight && appTab !== item.id && !visitedTabs[item.id] && (
                                         <div style={{
                                             position: 'absolute', top: -5, right: -5, width: '8px', height: '8px',
                                             borderRadius: '50%', background: '#ff3b30', border: '1px solid #1a1a1a'
@@ -496,10 +506,7 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
                         </div>
                     </div>
                 )}
-
-
-            </div> {/* End Phone Container */}
-
+            </div>
 
             {/* --- DIALOGUE OVERLAY (EXACT AROOM THEME) --- */}
             {dialogue.show && createPortal(
@@ -538,19 +545,19 @@ const PhoneAuth = ({ onComplete, onReturnToMirror }) => {
             )}
 
             <style>{`
-                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-                @keyframes appLaunch { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-                @keyframes gachaGlow { 
-                    0% { box-shadow: 0 0 10px rgba(94, 92, 230, 0.2); }
-                    100% { box-shadow: 0 0 25px rgba(94, 92, 230, 0.8); }
-                }
-                .gacha-breathing { animation: gachaPulse 2s infinite ease-in-out; }
-                @keyframes gachaPulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
-                @keyframes dialogueSlideUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
-                .guide-pulse { animation: navPulse 2s infinite; }
-                @keyframes navPulse { 0% { opacity: 0.4; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 5px #BF5AF2); } 100% { opacity: 0.4; transform: scale(1); } }
-            `}</style>
+                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                    @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                    @keyframes appLaunch { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+                    @keyframes gachaGlow { 
+                        0% { box-shadow: 0 0 10px rgba(94, 92, 230, 0.2); }
+                        100% { box-shadow: 0 0 25px rgba(94, 92, 230, 0.8); }
+                    }
+                    .gacha-breathing { animation: gachaPulse 2s infinite ease-in-out; }
+                    @keyframes gachaPulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
+                    @keyframes dialogueSlideUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+                    .guide-pulse { animation: navPulse 2s infinite; }
+                    @keyframes navPulse { 0% { opacity: 0.4; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 5px #BF5AF2); } 100% { opacity: 0.4; transform: scale(1); } }
+                `}</style>
         </div>
     );
 };
